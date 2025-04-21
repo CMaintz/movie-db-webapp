@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../services/firebase';
 import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
 } from 'firebase/auth';
 import { useSnackbar } from 'notistack';
 
@@ -14,21 +14,21 @@ import { useSnackbar } from 'notistack';
  * This creates a cleaner interface for components consuming auth data
  */
 export interface AuthUser {
-    uid: string;
-    email: string | null;
-    displayName: string | null;
-    photoURL?: string | null;
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL?: string | null;
 }
 
 /**
  * Interface defining the shape of our authentication context
  */
 interface AuthContextType {
-    user: AuthUser | null;
-    loading: boolean;
-    signUp: (email: string, password: string) => Promise<void>;
-    signIn: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
+  user: AuthUser | null;
+  loading: boolean;
+  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 /**
@@ -40,87 +40,87 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * Maps a Firebase user to our simplified AuthUser type
  */
 const mapFirebaseUserToAuthUser = (firebaseUser: FirebaseUser): AuthUser => ({
-    uid: firebaseUser.uid,
-    email: firebaseUser.email,
-    displayName: firebaseUser.displayName,
-    photoURL: firebaseUser.photoURL,
+  uid: firebaseUser.uid,
+  email: firebaseUser.email,
+  displayName: firebaseUser.displayName,
+  photoURL: firebaseUser.photoURL,
 });
 
 /**
  * Auth Provider component that wraps the application and provides auth context
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [loading, setLoading] = useState(true);
-    const { enqueueSnackbar } = useSnackbar();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { enqueueSnackbar } = useSnackbar();
 
-    useEffect(() => {
-        // Subscribe to Firebase auth state changes
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-            if (firebaseUser) {
-                // Convert Firebase user to our AuthUser type
-                setUser(mapFirebaseUserToAuthUser(firebaseUser));
-            } else {
-                setUser(null);
-            }
-            setLoading(false);
-        });
+  useEffect(() => {
+    // Subscribe to Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // Convert Firebase user to our AuthUser type
+        setUser(mapFirebaseUserToAuthUser(firebaseUser));
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    }, []);
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
-    /**
-     * Sign up a new user with email and password
-     */
-    const signUp = async (email: string, password: string) => {
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            enqueueSnackbar('Account created successfully!', { variant: 'success' });
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            enqueueSnackbar(`Failed to create account: ${errorMessage}`, { variant: 'error' });
-            throw error;
-        }
-    };
+  /**
+   * Sign up a new user with email and password
+   */
+  const signUp = async (email: string, password: string) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      enqueueSnackbar('Account created successfully!', { variant: 'success' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      enqueueSnackbar(`Failed to create account: ${errorMessage}`, { variant: 'error' });
+      throw error;
+    }
+  };
 
-    /**
-     * Sign in an existing user with email and password
-     */
-    const signIn = async (email: string, password: string) => {
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            enqueueSnackbar('Logged in successfully!', { variant: 'success' });
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            enqueueSnackbar(`Failed to log in: ${errorMessage}`, { variant: 'error' });
-            throw error;
-        }
-    };
+  /**
+   * Sign in an existing user with email and password
+   */
+  const signIn = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      enqueueSnackbar('Logged in successfully!', { variant: 'success' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      enqueueSnackbar(`Failed to log in: ${errorMessage}`, { variant: 'error' });
+      throw error;
+    }
+  };
 
-    /**
-     * Log out the current user
-     */
-    const logout = async () => {
-        try {
-            await signOut(auth);
-            enqueueSnackbar('Logged out successfully!', { variant: 'success' });
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            enqueueSnackbar(`Failed to log out: ${errorMessage}`, { variant: 'error' });
-            throw error;
-        }
-    };
+  /**
+   * Log out the current user
+   */
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      enqueueSnackbar('Logged out successfully!', { variant: 'success' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      enqueueSnackbar(`Failed to log out: ${errorMessage}`, { variant: 'error' });
+      throw error;
+    }
+  };
 
-    const value = {
-        user,
-        loading,
-        signUp,
-        signIn,
-        logout,
-    };
+  const value = {
+    user,
+    loading,
+    signUp,
+    signIn,
+    logout,
+  };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 /**
@@ -128,9 +128,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  * @throws Error if used outside of an AuthProvider
  */
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

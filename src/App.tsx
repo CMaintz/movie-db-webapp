@@ -15,99 +15,99 @@ import MediaDetailsPage from './pages/MediaDetailsPage';
 import theme from './theme';
 
 const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            gcTime: 1000 * 60 * 30, // 30 minutes
-        },
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
     },
+  },
 });
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { user } = useAuth();
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return <>{children}</>;
+  return <>{children}</>;
 };
 
 const AppContent: React.FC = () => {
-    const { user, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-    return (
-        <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/genre/:genreName" element={<GenrePage />} />
-            <Route path="/:mediaType/:id" element={<MediaDetailsPage />} />
-            <Route
-                path="/login"
-                element={user ? <Navigate to="/" /> : <LoginPage />}
-            />
-            <Route
-                path="/register"
-                element={user ? <Navigate to="/" /> : <RegisterPage />}
-            />
-            <Route
-                path="/profile"
-                element={
-                    <ProtectedRoute>
-                        <ProfilePage />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/wishlist"
-                element={
-                    <ProtectedRoute>
-                        <WishlistPage />
-                    </ProtectedRoute>
-                }
-            />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/genre/:genreName" element={<GenrePage />} />
+      <Route path="/:mediaType/:id" element={<MediaDetailsPage />} />
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" /> : <LoginPage />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/" /> : <RegisterPage />}
+      />
+      <Route
+        path="/profile"
+        element={ 
+        <ProtectedRoute> 
+          <ProfilePage /> 
+          </ProtectedRoute>
+          }
+      />
+      <Route 
+        path="/wishlist" 
+        element={
+          <ProtectedRoute>
+            <WishlistPage />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
+  );
 };
 
 function App() {
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <SnackbarProvider maxSnack={3}>
-                <QueryClientProvider client={queryClient}>
-                    <AuthProvider>
-                        <Router>
-                            <Box sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                minHeight: '100vh',
-                                width: '100%',
-                                maxWidth: '100vw',
-                            }}>
-                                <Navbar />
-                                <Box component="main" sx={{
-                                    flex: 1,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    width: '100%',
-                                    maxWidth: '100%',
-                                    pt: { xs: 7, sm: 8 },
-                                    overflowX: 'hidden'
-                                }}>
-                                    <AppContent />
-                                </Box>
-                            </Box>
-                        </Router>
-                    </AuthProvider>
-                </QueryClientProvider>
-            </SnackbarProvider>
-        </ThemeProvider>
-    );
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <SnackbarProvider maxSnack={3}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Router>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                minHeight: '100vh',
+                width: '100%',
+                maxWidth: '100vw',
+              }}>
+                <Navbar />
+                <Box component="main" sx={{ 
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '100%',
+                  maxWidth: '100%',
+                  pt: { xs: 7, sm: 8 },
+                  overflowX: 'hidden'
+                }}>
+                  <AppContent />
+                </Box>
+              </Box>
+            </Router>
+          </AuthProvider>
+        </QueryClientProvider>
+      </SnackbarProvider>
+    </ThemeProvider>
+  );
 }
 
 export default App;

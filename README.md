@@ -10,9 +10,10 @@ A modern, responsive web application for browsing movies and TV shows, powered b
 
 - **Movie & TV Show Browsing**: Explore trending movies and TV shows
 - **Detailed Media Information**: View comprehensive details for each movie/show, including:
-    - Cast and crew information
-    - Trailers and videos
-    - Ratings and release information
+  - Cast and crew information
+  - Trailers and videos
+  - Ratings and release information
+  - Similar recommendations
 - **Genre-based Discovery**: Browse content by genres
 - **User Authentication**: Create an account, log in, and manage your profile
 - **Wishlist Functionality**: Save your favorite movies and shows to your personal wishlist
@@ -26,7 +27,6 @@ A modern, responsive web application for browsing movies and TV shows, powered b
 - **UI Component Library**: Material UI v7
 - **Routing**: React Router v7
 - **Authentication**: Firebase Authentication
-- **Storage**: Firebase Firestore
 - **API Integration**: TMDB API
 - **Build Tool**: Vite
 - **CSS-in-JS**: Emotion
@@ -36,13 +36,13 @@ A modern, responsive web application for browsing movies and TV shows, powered b
 - Node.js (v18 or newer)
 - npm or yarn
 - TMDB API key (get one from [themoviedb.org](https://www.themoviedb.org/))
-- Firebase project (for authentication & Wishlist storage in firestore)
+- Firebase project (for authentication)
 
 ## 🚀 Getting Started
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/CMaintz/Movie_DB_Webapp.git
+   git clone https://github.com/yourusername/MovieDB.git
    cd MovieDB
    ```
 
@@ -79,6 +79,9 @@ A modern, responsive web application for browsing movies and TV shows, powered b
    yarn build
    ```
 
+## 📱 Screenshots
+
+*(Add screenshots of your application here)*
 
 ## 🔍 Project Structure
 
@@ -96,12 +99,16 @@ src/
 └── theme.ts        # Material UI theme customization
 ```
 
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## 🙏 Acknowledgments
 
 - [The Movie Database (TMDB)](https://www.themoviedb.org/) for their excellent API
 - [Material UI](https://mui.com/) for the component library
 - [Firebase](https://firebase.google.com/) for authentication services
-
-## Attribution
- ![tmdbLogo](https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg)
-This product uses the TMDB API but is not endorsed or certified by TMDB.
