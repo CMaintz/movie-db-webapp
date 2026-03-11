@@ -77,5 +77,3 @@ export interface SeriesDetails extends MediaDetails {
     air_date: string;
   }>;
 }
-
-//TODO: Need to add more types. TV Series and Movies have some differing fields, and popularity 
