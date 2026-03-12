@@ -12,6 +12,7 @@ export interface Media extends MediaBase {
   popularity: number;
   overview: string;
   genres: Array<Genre>;
+  release_date?: string; // normalized: release_date (movie) or first_air_date (tv)
 }
 
 export interface MediaResponse {

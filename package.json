@@ -12,7 +12,6 @@
   "dependencies": {
     "@noriginmedia/norigin-spatial-navigation": "^2.3.0",
     "@tanstack/react-query": "^5.74.4",
-    "axios": "^1.8.4",
     "firebase": "^11.6.0",
     "lucide-react": "^0.577.0",
     "react": "^19.0.0",

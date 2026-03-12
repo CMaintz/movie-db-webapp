@@ -1,87 +1,69 @@
 import React, { useState } from 'react';
-import { IconButton, Tooltip, keyframes } from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import { Heart } from 'lucide-react';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/AuthContext';
-
-const heartbeat = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.3);
-  }
-  100% {
-    transform: scale(1);
-  }
-`;
+import { toast } from 'sonner';
 
 interface WishlistButtonProps {
   mediaId: number;
   mediaType: 'movie' | 'tv';
-  sx?: any;
-  onWishlistChange?: (isWishlisted: boolean) => void; // Add callback prop
+  className?: string;
+  iconSize?: number;
+  onWishlistChange?: (isWishlisted: boolean) => void;
 }
 
-const WishlistButton: React.FC<WishlistButtonProps> = ({ mediaId, mediaType, sx,  onWishlistChange}) => {
+const WishlistButton: React.FC<WishlistButtonProps> = ({
+  mediaId,
+  mediaType,
+  className = '',
+  iconSize = 20,
+  onWishlistChange,
+}) => {
   const { user } = useAuth();
-  const { isInWishlist, addToWishlist, removeFromWishlist, refreshWishlist } = useWishlist();
-  const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const [animating, setAnimating] = useState(false);
 
   const isWishlisted = isInWishlist(mediaId, mediaType);
 
-  const handleWishlistClick = async (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
-      setShowTooltip(true);
+      toast.info('Please log in to manage your wishlist');
       return;
     }
+
     let success = false;
     if (isWishlisted) {
       success = await removeFromWishlist(mediaId, mediaType);
-
+      if (success) toast.success('Removed from wishlist');
     } else {
       success = await addToWishlist(mediaId, mediaType);
       if (success) {
-      setShouldAnimate(true);
-      setTimeout(() => setShouldAnimate(false), 500);
-    }
-  }
-    // If successful, notify parent and refresh wishlist
-    if (success) {
-      if (onWishlistChange) {
-        onWishlistChange(!isWishlisted);
+        setAnimating(true);
+        setTimeout(() => setAnimating(false), 500);
+        toast.success('Added to wishlist');
       }
-      await refreshWishlist();
+    }
+    if (success && onWishlistChange) {
+      onWishlistChange(!isWishlisted);
     }
   };
 
   return (
-    <Tooltip 
-      title="Please login to add to wishlist" 
-      open={showTooltip}
-      onClose={() => setShowTooltip(false)}
-      placement="top"
-      arrow
+    <button
+      onClick={handleClick}
+      className={`flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-primary transition-colors p-1.5 ${className}`}
+      aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
     >
-      <IconButton
-        onClick={handleWishlistClick}
-        sx={{
-          ...sx,
-          '& .MuiSvgIcon-root': {
-            animation: shouldAnimate ? `${heartbeat} 0.5s ease-in-out` : 'none',
-          }
-        }}
-      >
-        {isWishlisted ? (
-          <Favorite color="error" />
-        ) : (
-          <FavoriteBorder sx={{ color: 'white' }} />
-        )}
-      </IconButton>
-    </Tooltip>
+      <Heart
+        width={iconSize}
+        height={iconSize}
+        className={`transition-transform ${animating ? 'animate-heartbeat' : ''} ${
+          isWishlisted ? 'text-red-500 fill-red-500' : 'text-white fill-transparent'
+        }`}
+      />
+    </button>
   );
 };
 
-export default WishlistButton; 
+export default WishlistButton;

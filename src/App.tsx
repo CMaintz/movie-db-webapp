@@ -1,112 +1,105 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, Box } from '@mui/material';
-import { SnackbarProvider } from 'notistack';
+import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import GenrePage from './pages/GenrePage';
-import WishlistPage from './pages/WishlistPage';
-import MediaDetailsPage from './pages/MediaDetailsPage';
-import theme from './theme';
+
+// All pages are lazy-loaded so the initial bundle only contains the shell,
+// Navbar, auth context, and router. Each page loads on first navigation.
+const HomePage         = React.lazy(() => import('./pages/HomePage'));
+const LoginPage        = React.lazy(() => import('./pages/LoginPage'));
+const RegisterPage     = React.lazy(() => import('./pages/RegisterPage'));
+const ProfilePage      = React.lazy(() => import('./pages/ProfilePage'));
+const GenrePage        = React.lazy(() => import('./pages/GenrePage'));
+const WishlistPage     = React.lazy(() => import('./pages/WishlistPage'));
+const WatchedPage      = React.lazy(() => import('./pages/WatchedPage'));
+const MediaDetailsPage = React.lazy(() => import('./pages/MediaDetailsPage'));
+const RoulettePage     = React.lazy(() => import('./pages/RoulettePage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
     },
   },
 });
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
+const PageSpinner = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  </div>
+);
+
 const AppContent: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/genre/:genreName" element={<GenrePage />} />
-      <Route path="/:mediaType/:id" element={<MediaDetailsPage />} />
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" /> : <LoginPage />}
-      />
-      <Route
-        path="/register"
-        element={user ? <Navigate to="/" /> : <RegisterPage />}
-      />
-      <Route
-        path="/profile"
-        element={ 
-        <ProtectedRoute> 
-          <ProfilePage /> 
-          </ProtectedRoute>
-          }
-      />
-      <Route 
-        path="/wishlist" 
-        element={
-          <ProtectedRoute>
-            <WishlistPage />
-          </ProtectedRoute>
-        } 
-      />
-    </Routes>
+    <Suspense fallback={<PageSpinner />}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/genre/:name" element={<GenrePage />} />
+        <Route path="/:mediaType/:id" element={<MediaDetailsPage />} />
+        <Route path="/roulette" element={<RoulettePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/profile"
+          element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
+        />
+        <Route
+          path="/wishlist"
+          element={<ProtectedRoute><WishlistPage /></ProtectedRoute>}
+        />
+        <Route
+          path="/watched"
+          element={<ProtectedRoute><WatchedPage /></ProtectedRoute>}
+        />
+      </Routes>
+    </Suspense>
   );
 };
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <SnackbarProvider maxSnack={3}>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <Router>
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                minHeight: '100vh',
-                width: '100%',
-                maxWidth: '100vw',
-              }}>
-                <Navbar />
-                <Box component="main" sx={{ 
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  width: '100%',
-                  maxWidth: '100%',
-                  pt: { xs: 7, sm: 8 },
-                  overflowX: 'hidden'
-                }}>
-                  <AppContent />
-                </Box>
-              </Box>
-            </Router>
-          </AuthProvider>
-        </QueryClientProvider>
-      </SnackbarProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <div className="flex flex-col min-h-screen w-full max-w-[100vw] bg-bg-default text-white">
+            <Navbar />
+            <main className="flex-1 flex flex-col items-center w-full max-w-full pt-14 sm:pt-16 overflow-x-hidden">
+              <AppContent />
+            </main>
+          </div>
+          <Toaster
+            theme="dark"
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#1e1e1e',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+              },
+            }}
+          />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

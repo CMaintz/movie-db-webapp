@@ -36,3 +36,6 @@ build/
 coverage/
 /CLAUDE.md
 /.claude/
+
+# Runtime API key config (contains real keys — copy from appconfig.example.js)
+/public/appconfig.js

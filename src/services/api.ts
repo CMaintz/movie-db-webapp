@@ -1,136 +1,291 @@
-import axios from 'axios';
 import { MediaResponse, Genre, MediaDetails } from '../types';
 import { useQuery } from '@tanstack/react-query';
+import { config } from '../config';
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
-const DEFAULT_LANGUAGE = 'en-US'; // Set default language to English
-const MAX_PAGE_LIMIT = 500; // TMDB API page limit
+const DEFAULT_LANGUAGE = 'en-US';
+const MAX_PAGE_LIMIT = 500;
 
-const api = axios.create({
-  baseURL: BASE_URL,
-  params: {
-    api_key: API_KEY,
-    language: DEFAULT_LANGUAGE, // Apply language filter globally
-  },
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-  withCredentials: false,
-});
+// --- Fetch helpers ---
 
-// Add response interceptor to handle CORS
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 403) {
-      // Handle CORS errors
-      console.error('CORS error:', error);
-    }
-    return Promise.reject(error);
+const buildParams = (extra: Record<string, any> = {}): URLSearchParams => {
+  const p = new URLSearchParams();
+  p.set('api_key', config.tmdbApiKey);
+  p.set('language', DEFAULT_LANGUAGE);
+  for (const [k, v] of Object.entries(extra)) {
+    if (v !== undefined && v !== null) p.set(k, String(v));
   }
-);
-
-// Helper function to ensure page is within limits
-const getSafePage = (page: number): number => {
-  return Math.min(page, MAX_PAGE_LIMIT);
+  return p;
 };
 
-export const getTrending = async (mediaType: 'movie' | 'tv' = 'movie', page: number = 1): Promise<MediaResponse> => {
-  const safePage = getSafePage(page);
-  const { data } = await api.get(`/trending/${mediaType}/week`, {
-    params: { 
-      page: safePage,
-      with_original_language: 'en' // Only English language content
-    },
+const tmdbGet = async <T>(path: string, params: Record<string, any> = {}): Promise<T> => {
+  const res = await fetch(`${BASE_URL}${path}?${buildParams(params)}`);
+  if (!res.ok) {
+    if (res.status === 403) console.error('API error 403:', path);
+    throw new Error(`TMDB ${res.status}: ${path}`);
+  }
+  return res.json();
+};
+
+const tmdbGetBearer = async <T>(path: string, params: Record<string, any> = {}): Promise<T> => {
+  const p = new URLSearchParams({ language: DEFAULT_LANGUAGE });
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null) p.set(k, String(v));
+  }
+  const res = await fetch(`${BASE_URL}${path}?${p}`, {
+    headers: { Authorization: `Bearer ${config.tmdbReadToken}` },
   });
-  
-  // Set a maximum number of total pages to avoid API errors
-  if (data.total_pages > MAX_PAGE_LIMIT) {
-    data.total_pages = MAX_PAGE_LIMIT;
-  }
-  
-  return data;
+  if (!res.ok) throw new Error(`TMDB Bearer ${res.status}: ${path}`);
+  return res.json();
 };
+
+const getSafePage = (page: number): number => Math.min(page, MAX_PAGE_LIMIT);
+
+// --- Trending ---
+
+export type TrendingWindow = 'day' | 'week' | 'month' | 'year';
+
+export const getTrending = async (
+  mediaType: 'movie' | 'tv' = 'movie',
+  window: TrendingWindow = 'week',
+  page: number = 1
+): Promise<MediaResponse> => {
+  const safePage = getSafePage(page);
+
+  // TMDB only has /trending/{type}/day and /trending/{type}/week natively.
+  // For month/year we use /discover with a date range sorted by popularity.
+  if (window === 'day' || window === 'week') {
+    const data = await tmdbGet<MediaResponse>(`/trending/${mediaType}/${window}`, {
+      page: safePage,
+      with_original_language: 'en',
+    });
+    if (data.total_pages > MAX_PAGE_LIMIT) data.total_pages = MAX_PAGE_LIMIT;
+    return data;
+  }
+
+  const now = new Date();
+  let dateFrom: string;
+  if (window === 'month') {
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
+    dateFrom = d.toISOString().split('T')[0];
+  } else {
+    dateFrom = `${now.getFullYear()}-01-01`;
+  }
+
+  const dateField = mediaType === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte';
+  const data = await tmdbGet<MediaResponse>(`/discover/${mediaType}`, {
+    [dateField]: dateFrom,
+    sort_by: 'popularity.desc',
+    with_original_language: 'en',
+    page: safePage,
+  });
+
+  const results = data.results.map((item: any) => ({
+    ...item,
+    media_type: mediaType,
+    title: item.title || item.name,
+  }));
+
+  if (data.total_pages > MAX_PAGE_LIMIT) data.total_pages = MAX_PAGE_LIMIT;
+  return { ...data, results };
+};
+
+// --- Genres ---
 
 export const getGenres = async (mediaType: 'movie' | 'tv'): Promise<Genre[]> => {
-  const { data } = await api.get(`/genre/${mediaType}/list`);
+  const data = await tmdbGet<{ genres: Genre[] }>(`/genre/${mediaType}/list`);
   return data.genres;
 };
+
+// --- Genre sort ---
+
+export type GenreSortBy =
+  | 'popularity.desc'
+  | 'vote_average.desc'
+  | 'release_date.desc'
+  | 'release_date.asc';
+
+const resolveSort = (sortBy: GenreSortBy, mediaType: 'movie' | 'tv'): string => {
+  if (sortBy === 'release_date.desc')
+    return mediaType === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc';
+  if (sortBy === 'release_date.asc')
+    return mediaType === 'movie' ? 'primary_release_date.asc' : 'first_air_date.asc';
+  return sortBy;
+};
+
+// --- Media by genre ---
 
 export const getMediaByGenre = async (
   mediaType: 'movie' | 'tv',
   genreId: number,
-  page: number = 1
+  page: number = 1,
+  providerIds?: number[],
+  watchRegion?: string,
+  sortBy: GenreSortBy = 'popularity.desc'
 ): Promise<MediaResponse> => {
   const safePage = getSafePage(page);
-  const { data } = await api.get(`/discover/${mediaType}`, {
-    params: {
-      with_genres: genreId,
-      page: safePage,
-      with_original_language: 'en', // Only English language content
-      sort_by: 'popularity.desc' // Sort by popularity
-    },
-  });
-  
-  // Set a maximum number of total pages to avoid API errors
-  if (data.total_pages > MAX_PAGE_LIMIT) {
-    data.total_pages = MAX_PAGE_LIMIT;
+  const params: Record<string, any> = {
+    with_genres: genreId,
+    page: safePage,
+    with_original_language: 'en',
+    sort_by: resolveSort(sortBy, mediaType),
+  };
+
+  if (sortBy === 'vote_average.desc') {
+    params['vote_count.gte'] = 100;
   }
-  
-  // Normalize fields for both movies and TV shows
+
+  if (providerIds && providerIds.length > 0 && watchRegion) {
+    params.with_watch_providers = providerIds.join('|');
+    params.watch_region = watchRegion;
+  }
+
+  const data = await tmdbGet<MediaResponse>(`/discover/${mediaType}`, params);
+
+  if (data.total_pages > MAX_PAGE_LIMIT) data.total_pages = MAX_PAGE_LIMIT;
+
   const results = data.results.map((item: any) => ({
     ...item,
     media_type: mediaType,
-    title: item.title || item.name
+    title: item.title || item.name,
   }));
-  
-  return {
-    ...data,
-    results
-  };
+
+  return { ...data, results };
 };
+
+// --- Media details ---
 
 export const getMediaDetails = async (
   mediaType: 'movie' | 'tv',
   id: number
 ): Promise<MediaDetails> => {
-  const { data } = await api.get(`/${mediaType}/${id}`, {
-    params: {
-      append_to_response: 'credits,videos,runtime,status,last_air_date'
-    },
+  const data = await tmdbGet<any>(`/${mediaType}/${id}`, {
+    append_to_response: 'credits,videos,runtime,status,last_air_date',
   });
-  
+
   return {
     ...data,
     media_type: mediaType,
     title: data.title || data.name,
-    release_date: data.release_date || data.first_air_date
+    release_date: data.release_date || data.first_air_date,
   };
 };
 
-export const getMediaCountByGenre = async (mediaType: 'movie' | 'tv', genreId: number): Promise<number> => {
-  const { data } = await api.get(`/discover/${mediaType}`, {
-    params: {
-      with_genres: genreId,
-      page: 1,
-      with_original_language: 'en' // Only English language content
-    },
-  });
-  
-  // Cap the total results based on maximum page size
-  const maxResults = MAX_PAGE_LIMIT * 20; // Assuming 20 results per page
-  return Math.min(data.total_results, maxResults);
+// --- Media count by genre ---
+
+export const getMediaCountByGenre = async (
+  mediaType: 'movie' | 'tv',
+  genreId: number,
+  providerIds?: number[],
+  watchRegion?: string
+): Promise<number> => {
+  const params: Record<string, any> = {
+    with_genres: genreId,
+    page: 1,
+    with_original_language: 'en',
+  };
+  if (providerIds && providerIds.length > 0 && watchRegion) {
+    params.with_watch_providers = providerIds.join('|');
+    params.watch_region = watchRegion;
+  }
+  const data = await tmdbGet<MediaResponse>(`/discover/${mediaType}`, params);
+  return Math.min(data.total_results, MAX_PAGE_LIMIT * 20);
 };
 
-export const useTrending = (mediaType: 'movie' | 'tv' = 'movie', page: number = 1, options?: any) => {
+// --- Watch providers ---
+
+export interface WatchProviderEntry {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+  display_priority: number;
+}
+
+export interface WatchProvidersResult {
+  flatrate?: WatchProviderEntry[];
+  buy?: WatchProviderEntry[];
+  rent?: WatchProviderEntry[];
+  link?: string;
+}
+
+export const getWatchProviders = async (
+  mediaType: 'movie' | 'tv',
+  id: number,
+  region: string = config.watchRegion || 'US'
+): Promise<WatchProvidersResult | null> => {
+  if (!config.tmdbReadToken) return null;
+  try {
+    const data = await tmdbGetBearer<{ results: Record<string, WatchProvidersResult> }>(
+      `/${mediaType}/${id}/watch/providers`
+    );
+    return data.results?.[region] ?? null;
+  } catch {
+    return null;
+  }
+};
+
+// --- Roulette discover ---
+
+export const discoverRandom = async (
+  mediaType: 'movie' | 'tv',
+  genreIds: number[],
+  genreMode: 'AND' | 'OR',
+  minRating: number,
+  yearFrom: number | null,
+  yearTo: number | null,
+  page: number,
+  providerIds?: number[],
+  watchRegion?: string
+): Promise<MediaResponse> => {
+  const safePage = getSafePage(page);
+  const separator = genreMode === 'AND' ? '|' : ',';
+  const params: Record<string, any> = {
+    page: safePage,
+    sort_by: 'popularity.desc',
+    with_original_language: 'en',
+    'vote_average.gte': minRating,
+  };
+
+  if (genreIds.length > 0) {
+    params.with_genres = genreIds.join(separator);
+  }
+
+  const dateGte = mediaType === 'movie' ? 'primary_release_date.gte' : 'first_air_date.gte';
+  const dateLte = mediaType === 'movie' ? 'primary_release_date.lte' : 'first_air_date.lte';
+
+  if (yearFrom) params[dateGte] = `${yearFrom}-01-01`;
+  if (yearTo) params[dateLte] = `${yearTo}-12-31`;
+
+  if (providerIds && providerIds.length > 0 && watchRegion) {
+    params.with_watch_providers = providerIds.join('|');
+    params.watch_region = watchRegion;
+  }
+
+  const data = await tmdbGet<MediaResponse>(`/discover/${mediaType}`, params);
+
+  if (data.total_pages > MAX_PAGE_LIMIT) data.total_pages = MAX_PAGE_LIMIT;
+
+  const results = data.results.map((item: any) => ({
+    ...item,
+    media_type: mediaType,
+    title: item.title || item.name,
+  }));
+
+  return { ...data, results };
+};
+
+// --- React Query hooks ---
+
+export const useTrending = (
+  mediaType: 'movie' | 'tv' = 'movie',
+  window: TrendingWindow = 'week',
+  page: number = 1
+) => {
   return useQuery<MediaResponse>({
-    queryKey: ['trending', mediaType, page],
-    queryFn: () => getTrending(mediaType, page),
+    queryKey: ['trending', mediaType, window, page],
+    queryFn: () => getTrending(mediaType, window, page),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
-    ...options,
   });
 };
 
@@ -144,10 +299,18 @@ export const useGenres = (mediaType: 'movie' | 'tv', options?: any) => {
   });
 };
 
-export const useMediaByGenre = (mediaType: 'movie' | 'tv', genreId: number, page: number = 1, options?: any) => {
+export const useMediaByGenre = (
+  mediaType: 'movie' | 'tv',
+  genreId: number,
+  page: number = 1,
+  providerIds?: number[],
+  watchRegion?: string,
+  sortBy: GenreSortBy = 'popularity.desc',
+  options?: any
+) => {
   return useQuery<MediaResponse>({
-    queryKey: ['mediaByGenre', mediaType, genreId, page],
-    queryFn: () => getMediaByGenre(mediaType, genreId, page),
+    queryKey: ['mediaByGenre', mediaType, genreId, page, providerIds, watchRegion, sortBy],
+    queryFn: () => getMediaByGenre(mediaType, genreId, page, providerIds, watchRegion, sortBy),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     ...options,
@@ -163,11 +326,29 @@ export const useMediaDetails = (mediaType: 'movie' | 'tv', id: number) => {
   });
 };
 
-export const useMediaCountByGenre = (mediaType: 'movie' | 'tv', genreId: number) => {
+export const useMediaCountByGenre = (
+  mediaType: 'movie' | 'tv',
+  genreId: number,
+  providerIds?: number[],
+  watchRegion?: string
+) => {
   return useQuery<number>({
-    queryKey: ['mediaCountByGenre', mediaType, genreId],
-    queryFn: () => getMediaCountByGenre(mediaType, genreId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    queryKey: ['mediaCountByGenre', mediaType, genreId, providerIds, watchRegion],
+    queryFn: () => getMediaCountByGenre(mediaType, genreId, providerIds, watchRegion),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
-}; 
+};
+
+export const useWatchProviders = (
+  mediaType: 'movie' | 'tv',
+  id: number,
+  region?: string
+) => {
+  return useQuery<WatchProvidersResult | null>({
+    queryKey: ['watchProviders', mediaType, id, region],
+    queryFn: () => getWatchProviders(mediaType, id, region),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
+  });
+};

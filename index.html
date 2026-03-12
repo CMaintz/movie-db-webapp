@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <title>MDB — Movie & TV Browser</title>
+    <!-- Warm up connections to external APIs before JS loads -->
+    <link rel="preconnect" href="https://api.themoviedb.org" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://www.omdbapi.com" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime API key config — edit public/appconfig.js before sideloading -->
+    <script src="/appconfig.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

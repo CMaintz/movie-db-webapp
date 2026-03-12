@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { useSnackbar } from 'notistack';
+import { toast } from 'sonner';
 
 /**
  * Custom User type that contains only the fields we need from FirebaseUser
@@ -52,8 +52,6 @@ const mapFirebaseUserToAuthUser = (firebaseUser: FirebaseUser): AuthUser => ({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const { enqueueSnackbar } = useSnackbar();
-
   useEffect(() => {
     // Subscribe to Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
@@ -76,10 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      enqueueSnackbar('Account created successfully!', { variant: 'success' });
+      toast.success('Account created successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      enqueueSnackbar(`Failed to create account: ${errorMessage}`, { variant: 'error' });
+      toast.error(`Failed to create account: ${errorMessage}`);
       throw error;
     }
   };
@@ -90,10 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      enqueueSnackbar('Logged in successfully!', { variant: 'success' });
+      toast.success('Logged in successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      enqueueSnackbar(`Failed to log in: ${errorMessage}`, { variant: 'error' });
+      toast.error(`Failed to log in: ${errorMessage}`);
       throw error;
     }
   };
@@ -104,10 +102,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await signOut(auth);
-      enqueueSnackbar('Logged out successfully!', { variant: 'success' });
+      toast.success('Logged out successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      enqueueSnackbar(`Failed to log out: ${errorMessage}`, { variant: 'error' });
+      toast.error(`Failed to log out: ${errorMessage}`);
       throw error;
     }
   };

@@ -89,10 +89,6 @@ export const useWishlist = () => {
     }
   }, [user, bumpVersion]);
 
-  const refreshWishlist = () => {
-    // Force a state update to trigger rerenders in components using this hook
-    setWishlist(prev => [...prev]);
-  };
 
   /**
    * Removes an item from the current user's wishlist
