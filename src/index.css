@@ -41,6 +41,14 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #555;
   }
+
+  /* Hide scrollbar completely on TV */
+  .tv-mode ::-webkit-scrollbar {
+    display: none;
+  }
+  .tv-mode {
+    scrollbar-width: none;
+  }
 }
 
 @layer components {

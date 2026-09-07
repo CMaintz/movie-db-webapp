@@ -8,7 +8,7 @@ export interface UserSettings {
 
 const DEFAULT_SETTINGS: UserSettings = {
   streamingServiceIds: [],
-  watchRegion: 'US',
+  watchRegion: '',
 };
 
 export const userSettingsService = {

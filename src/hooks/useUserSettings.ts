@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userSettingsService, UserSettings } from '../services/userSettingsService';
+import { getDetectedRegion } from '../utils/geoRegion';
 
 export const useUserSettings = () => {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<UserSettings>({ streamingServiceIds: [], watchRegion: 'US' });
+  const [settings, setSettings] = useState<UserSettings>({ streamingServiceIds: [], watchRegion: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
-      setSettings({ streamingServiceIds: [], watchRegion: 'US' });
-      setLoading(false);
+      // For unauthenticated users, use IP-detected region
+      getDetectedRegion().then((region) => {
+        setSettings({ streamingServiceIds: [], watchRegion: region || '' });
+        setLoading(false);
+      });
       return;
     }
     setLoading(true);

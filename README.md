@@ -1,114 +1,61 @@
-# MovieDB - Movie Database Web Application
+# MDB — Movie & TV Browser (Web + LG webOS TV)
 
-![MovieDB](https://img.shields.io/badge/MovieDB-React%20%7C%20TypeScript%20%7C%20Material%20UI-2196f3)
+A movie and TV show browser that runs both as a standard web app **and** as a native LG webOS TV app with full remote-control (D-pad) navigation. Browse trending titles, dive into details with trailers and ratings from multiple sources, see exactly which streaming services carry each title in your country, and launch straight into the streaming app on your TV via deep links.
 
-A modern, responsive web application for browsing movies and TV shows, powered by The Movie Database (TMDB) API. Built with React, TypeScript, and Material UI.
+## Features
 
-![Dark Theme](https://img.shields.io/badge/Theme-Dark-121212)
+- **Browse & discover** — trending movies and TV shows, genre pages, and detailed media pages with cast, trailers, and similar titles
+- **Multi-source ratings** — TMDB scores plus IMDb and Rotten Tomatoes ratings via OMDb
+- **Streaming availability** — automatically detects your country (IP geolocation, with manual override) and shows which streaming services carry each title there
+- **Deep links** — per-title deep links into streaming services; on webOS these launch the target app directly with Luna launch parameters
+- **Roulette** — can't decide? Spin for a random title, filtered by genre, year, minimum score (TMDB/IMDb/RT), and your subscribed streaming services — sourced from all of TMDB or your own wishlist
+- **Accounts** — Firebase email/password auth with wishlist, watched list, and settings synced through Firestore (optimistic updates)
+- **TV-first UX** — spatial navigation for D-pad remotes, media key handling, auto-scroll on focus, safe-area padding, and 1080p rendering that webOS upscales to 4K
 
-## ✨ Features
+## Tech Stack
 
-- **Movie & TV Show Browsing**: Explore trending movies and TV shows
-- **Detailed Media Information**: View comprehensive details for each movie/show, including:
-  - Cast and crew information
-  - Trailers and videos
-  - Ratings and release information
-  - Similar recommendations
-- **Genre-based Discovery**: Browse content by genres
-- **User Authentication**: Create an account, log in, and manage your profile
-- **Wishlist Functionality**: Save your favorite movies and shows to your personal wishlist
-- **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
-- **Dark Theme**: Eye-friendly dark mode for comfortable viewing
+- **React 19** + **TypeScript**, **Vite**, **Tailwind CSS**
+- **TanStack React Query** for server state
+- **React Router 7** (`HashRouter` — required for webOS sideloading)
+- **Firebase Auth + Firestore**
+- **@noriginmedia/norigin-spatial-navigation** for TV D-pad focus management
+- **APIs:** TMDB (v3 + v4), OMDb, Streaming Availability (movieofthenight), ip-api.com
+- **webOS:** ares-cli packaging, `webOSTV.js`, Luna service launch params
 
-## 🛠️ Technology Stack
+## Getting Started
 
-- **Frontend Framework**: React 19 with TypeScript
-- **State Management**: React Query (TanStack Query) for server state
-- **UI Component Library**: Material UI v7
-- **Routing**: React Router v7
-- **Authentication**: Firebase Authentication
-- **API Integration**: TMDB API
-- **Build Tool**: Vite
-- **CSS-in-JS**: Emotion
-
-## 📋 Prerequisites
-
-- Node.js (v18 or newer)
-- npm or yarn
-- TMDB API key (get one from [themoviedb.org](https://www.themoviedb.org/))
-- Firebase project (for authentication)
-
-## 🚀 Getting Started
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/MovieDB.git
-   cd MovieDB
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn
-   ```
-
-3. **Set up environment variables**
-   Create a `.env` file in the root directory with the following:
-   ```
-   VITE_TMDB_API_KEY=your_tmdb_api_key
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-   VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
-   VITE_FIREBASE_APP_ID=your_firebase_app_id
-   ```
-
-4. **Start the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. **Build for production**
-   ```bash
-   npm run build
-   # or
-   yarn build
-   ```
-
-## 📱 Screenshots
-
-*(Add screenshots of your application here)*
-
-## 🔍 Project Structure
-
-```
-src/
-├── assets/         # Static assets
-├── components/     # Reusable UI components
-├── config/         # Configuration files
-├── context/        # React context providers
-├── hooks/          # Custom React hooks
-├── pages/          # Application pages
-├── services/       # API and external services
-├── utils/          # Utility functions
-├── types.ts        # TypeScript type definitions
-└── theme.ts        # Material UI theme customization
+```bash
+npm install
+cp .env.example .env   # fill in keys (see below)
+npm run dev
 ```
 
-## 🤝 Contributing
+Required environment variables (all `VITE_`-prefixed):
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+| Variable | Purpose |
+|---|---|
+| `VITE_TMDB_API_KEY` / `VITE_TMDB_READ_TOKEN` | TMDB media data + watch providers |
+| `VITE_FIREBASE_*` | Firebase Auth + Firestore |
+| `VITE_OMDB_API_KEY` | IMDb / Rotten Tomatoes scores (optional) |
+| `VITE_STREAMING_API_KEY` | Per-title deep links (optional) |
+| `VITE_WATCH_REGION` | Country override, e.g. `DK` (optional — auto-detected) |
 
-## 📄 License
+### TV build (LG webOS)
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Requires [ares-cli](https://webostv.developer.lge.com/develop/tools/cli-introduction) and a TV in developer mode:
 
-## 🙏 Acknowledgments
+```bash
+npm run build:tv     # production build + webOS manifest/icons
+npm run package:tv   # package into .ipk
+npm run install:tv   # sideload to connected TV
+npm run launch:tv    # launch on TV
+npm run inspect:tv   # remote DevTools
+```
 
-- [The Movie Database (TMDB)](https://www.themoviedb.org/) for their excellent API
-- [Material UI](https://mui.com/) for the component library
-- [Firebase](https://firebase.google.com/) for authentication services
+## Architecture Notes
+
+- **Region resolution** priority: Firestore user setting → build/runtime config → IP detection → `US` fallback
+- **Watch providers**: TMDB `/watch/providers` filtered to the resolved region; discover queries can filter by `watch_region` + `with_watch_providers`
+- **webOS deep links**: `src/utils/webosProviders.ts` maps TMDB provider IDs to webOS app IDs and builds `contentTarget` launch params from deep-link URLs; a dev test bench lives at `/#/dev/deeplink-test`
+- **Firestore layout**: `users/{uid}/wishlist`, `users/{uid}/watched`, `users/{uid}/meta/settings`
+- **Type hierarchy**: `MediaBase → Media → MediaDetails → MovieDetails | SeriesDetails`, with TMDB's `name`/`title` inconsistency normalized at the API layer

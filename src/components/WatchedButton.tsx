@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useWatched } from '../hooks/useWatched';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,7 @@ interface WatchedButtonProps {
   className?: string;
   iconSize?: number;
   onWatchedChange?: (isWatched: boolean) => void;
+  focusable?: boolean;
 }
 
 const WatchedButton: React.FC<WatchedButtonProps> = ({
@@ -19,6 +21,7 @@ const WatchedButton: React.FC<WatchedButtonProps> = ({
   className = '',
   iconSize = 20,
   onWatchedChange,
+  focusable: enableFocus = false,
 }) => {
   const { user } = useAuth();
   const { isWatched, addToWatched, removeFromWatched } = useWatched();
@@ -27,8 +30,7 @@ const WatchedButton: React.FC<WatchedButtonProps> = ({
 
   const watched = isWatched(mediaId, mediaType);
 
-  const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggle = async () => {
     if (!user) {
       toast.info('Please log in to manage your watched list');
       return;
@@ -58,10 +60,23 @@ const WatchedButton: React.FC<WatchedButtonProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleToggle();
+  };
+
+  const { ref, focused } = useFocusable({
+    focusable: enableFocus,
+    onEnterPress: handleToggle,
+  });
+
   return (
     <button
+      ref={enableFocus ? ref as React.RefObject<HTMLButtonElement> : undefined}
       onClick={handleClick}
-      className={`flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-primary transition-colors p-1.5 ${className}`}
+      className={`flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-primary transition-colors p-1.5 ${
+        enableFocus && focused ? 'ring-2 ring-primary' : ''
+      } ${className}`}
       aria-label={watched ? 'Remove from watched' : 'Mark as watched'}
     >
       {watched ? (

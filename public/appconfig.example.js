@@ -9,8 +9,9 @@
  *   3. Restart the app
  */
 window.__APP_CONFIG__ = {
-  tmdbApiKey:    '',   // from themoviedb.org → Settings → API
-  tmdbReadToken: '',   // from themoviedb.org → Settings → API → Read Access Token
-  omdbApiKey:    '',   // from omdbapi.com/apikey.aspx  (optional — IMDb/RT scores)
-  watchRegion:   'US', // ISO 3166-1 country code for streaming availability
+  tmdbApiKey:      '',   // from themoviedb.org → Settings → API
+  tmdbReadToken:   '',   // from themoviedb.org → Settings → API → Read Access Token
+  omdbApiKey:      '',   // from omdbapi.com/apikey.aspx  (optional — IMDb/RT scores)
+  watchRegion:     'DK', // ISO 3166-1 country code for streaming availability
+  streamingApiKey: '',   // from developers.movieofthenight.com (optional — deep links)
 };

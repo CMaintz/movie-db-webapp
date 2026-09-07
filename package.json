@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:tv": "npm run build && shx cp webos/appinfo.json dist/ && shx cp webos/icon.png dist/ && shx cp webos/largeIcon.png dist/",
+    "package:tv": "npm run build:tv && ares-package dist -o webos",
+    "install:tv": "npm run package:tv && ares-install webos/com.mdb.app_1.0.0_all.ipk",
+    "launch:tv": "ares-launch com.mdb.app",
+    "inspect:tv": "ares-inspect --app com.mdb.app --open"
   },
   "dependencies": {
     "@noriginmedia/norigin-spatial-navigation": "^2.3.0",
@@ -31,6 +36,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "postcss": "^8.5.8",
+    "shx": "^0.3.4",
     "tailwindcss": "^3.4.19",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",

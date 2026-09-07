@@ -120,19 +120,9 @@ const RoulettePage: React.FC = () => {
           return;
         }
 
-        // Try up to 5 candidates to meet the score threshold
         const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-        for (const candidate of shuffled.slice(0, 5)) {
-          const full = await getMediaDetails(candidate.media_type, candidate.id);
-          if (await meetsScoreThreshold(full, minRating, scoreSource)) {
-            picked = full;
-            break;
-          }
-        }
-        if (!picked) {
-          // Fall back to first candidate if none meet threshold
-          picked = await getMediaDetails(shuffled[0].media_type, shuffled[0].id);
-        }
+        const candidate = shuffled[0];
+        picked = await getMediaDetails(candidate.media_type, candidate.id);
       } else {
         // TMDB discover
         const types: ('movie' | 'tv')[] =
@@ -334,7 +324,8 @@ const RoulettePage: React.FC = () => {
           </div>
         )}
 
-        {/* Minimum rating */}
+        {/* Minimum rating (TMDB only) */}
+        {source === 'tmdb' && (
         <div>
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <p className="text-white/70 text-sm">
@@ -378,6 +369,7 @@ const RoulettePage: React.FC = () => {
             </p>
           )}
         </div>
+        )}
 
         {/* Year range (TMDB only) */}
         {source === 'tmdb' && (

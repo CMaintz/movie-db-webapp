@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Edit, LogOut, MapPin } from 'lucide-react';
+import { User, Edit, LogOut, MapPin, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { KNOWN_STREAMING_SERVICES } from '../utils/streamingServices';
@@ -177,6 +177,15 @@ const ProfilePage: React.FC = () => {
           ))}
         </select>
       </div>
+
+      {/* Dev tools link */}
+      <button
+        onClick={() => navigate('/dev/deeplink-test')}
+        className="flex items-center justify-center gap-2 text-white/30 hover:text-white/60 text-xs py-3 transition-colors"
+      >
+        <Wrench className="w-3 h-3" />
+        Deep Link Test Bench
+      </button>
     </div>
   );
 };

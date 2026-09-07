@@ -1,0 +1,14 @@
+{
+  "id": "com.mdb.app",
+  "version": "1.0.0",
+  "vendor": "MDB",
+  "type": "web",
+  "main": "index.html",
+  "title": "MovieDB",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#121212",
+  "resolution": "1920x1080",
+  "handlesRelaunch": true,
+  "handleDeepLink": true
+}

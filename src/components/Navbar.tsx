@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
+  useFocusable,
+  FocusContext,
+} from '@noriginmedia/norigin-spatial-navigation';
+import {
   Home,
   LayoutGrid,
   Heart,
@@ -23,11 +27,50 @@ const NAV_ITEMS = [
   { label: 'Watched', icon: CheckCircle, path: '/watched' },
 ];
 
+const NavBtn = ({
+  onClick,
+  icon: Icon,
+  label,
+  isActive,
+  className = '',
+}: {
+  onClick: () => void;
+  icon: React.FC<{ className?: string }>;
+  label: string;
+  isActive: boolean;
+  className?: string;
+}) => {
+  const { ref, focused } = useFocusable({ onEnterPress: onClick });
+  return (
+    <button
+      ref={ref as React.RefObject<HTMLButtonElement>}
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none ${
+        focused ? 'ring-2 ring-primary' : ''
+      } ${
+        isActive
+          ? 'text-primary bg-primary/10'
+          : 'text-white/80 hover:text-white hover:bg-white/10'
+      } ${className}`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
+};
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const { ref: navRef, focusKey } = useFocusable({
+    focusKey: 'NAVBAR',
+    trackChildren: true,
+    isFocusBoundary: true,
+    focusBoundaryDirections: ['left', 'right'] as any,
+  });
 
   // Close drawer on route change
   useEffect(() => {
@@ -47,69 +90,68 @@ const Navbar = () => {
   return (
     <>
       {/* Desktop navbar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-paper/95 backdrop-blur-sm border-b border-white/10 h-14 hidden md:flex items-center px-4 gap-2">
-        <button
-          onClick={() => navigate('/')}
-          className="text-white font-bold text-lg tracking-wide mr-4 focus:outline-none focus:ring-2 focus:ring-primary rounded"
+      <FocusContext.Provider value={focusKey}>
+        <header
+          ref={navRef as React.RefObject<HTMLElement>}
+          className="fixed top-0 left-0 right-0 z-50 bg-bg-paper/95 backdrop-blur-sm border-b border-white/10 h-14 hidden md:flex items-center px-4 gap-2"
         >
-          MovieDB
-        </button>
+          <NavBtn
+            onClick={() => navigate('/')}
+            icon={() => <span className="text-white font-bold text-lg tracking-wide">MovieDB</span>}
+            label=""
+            isActive={false}
+            className="mr-4"
+          />
 
-        <nav className="flex items-center gap-1 flex-1">
-          {NAV_ITEMS.map(({ label, icon: Icon, path }) => (
-            <button
-              key={label}
-              onClick={() => navigate(path)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
-                isActive(path)
-                  ? 'text-primary bg-primary/10'
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
+          <nav className="flex items-center gap-1 flex-1">
+            {NAV_ITEMS.map(({ label, icon, path }) => (
+              <NavBtn
+                key={label}
+                onClick={() => navigate(path)}
+                icon={icon}
+                label={label}
+                isActive={isActive(path)}
+              />
+            ))}
+          </nav>
 
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <button
-                onClick={() => navigate('/profile')}
-                className="flex items-center gap-2 text-white/80 hover:text-white px-3 py-1.5 rounded-lg text-sm hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-              >
-                <User className="w-4 h-4" />
-                {user.displayName || user.email?.split('@')[0] || 'Profile'}
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-white/60 hover:text-white px-3 py-1.5 rounded-lg text-sm hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/login')}
-                className="flex items-center gap-2 text-white/80 hover:text-white px-3 py-1.5 rounded-lg text-sm hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-              >
-                <LogIn className="w-4 h-4" />
-                Login
-              </button>
-              <button
-                onClick={() => navigate('/register')}
-                className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-              >
-                <UserPlus className="w-4 h-4" />
-                Register
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <NavBtn
+                  onClick={() => navigate('/profile')}
+                  icon={User}
+                  label={user.displayName || user.email?.split('@')[0] || 'Profile'}
+                  isActive={false}
+                />
+                <NavBtn
+                  onClick={handleLogout}
+                  icon={LogOut}
+                  label="Logout"
+                  isActive={false}
+                  className="text-white/60"
+                />
+              </>
+            ) : (
+              <>
+                <NavBtn
+                  onClick={() => navigate('/login')}
+                  icon={LogIn}
+                  label="Login"
+                  isActive={false}
+                />
+                <NavBtn
+                  onClick={() => navigate('/register')}
+                  icon={UserPlus}
+                  label="Register"
+                  isActive={false}
+                  className="bg-primary text-white hover:bg-primary-dark"
+                />
+              </>
+            )}
+          </div>
+        </header>
+      </FocusContext.Provider>
 
       {/* Mobile: top bar with hamburger */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-bg-paper/95 backdrop-blur-sm border-b border-white/10 h-14 flex md:hidden items-center px-4">

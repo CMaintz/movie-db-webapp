@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -10,6 +11,7 @@ interface WishlistButtonProps {
   className?: string;
   iconSize?: number;
   onWishlistChange?: (isWishlisted: boolean) => void;
+  focusable?: boolean;
 }
 
 const WishlistButton: React.FC<WishlistButtonProps> = ({
@@ -18,6 +20,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
   className = '',
   iconSize = 20,
   onWishlistChange,
+  focusable: enableFocus = false,
 }) => {
   const { user } = useAuth();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
@@ -25,8 +28,7 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
 
   const isWishlisted = isInWishlist(mediaId, mediaType);
 
-  const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggle = async () => {
     if (!user) {
       toast.info('Please log in to manage your wishlist');
       return;
@@ -49,10 +51,23 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleToggle();
+  };
+
+  const { ref, focused } = useFocusable({
+    focusable: enableFocus,
+    onEnterPress: handleToggle,
+  });
+
   return (
     <button
+      ref={enableFocus ? ref as React.RefObject<HTMLButtonElement> : undefined}
       onClick={handleClick}
-      className={`flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-primary transition-colors p-1.5 ${className}`}
+      className={`flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-primary transition-colors p-1.5 ${
+        enableFocus && focused ? 'ring-2 ring-primary' : ''
+      } ${className}`}
       aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
     >
       <Heart

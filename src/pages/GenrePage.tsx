@@ -8,7 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import MediaGrid from '../components/MediaGrid';
 import Pagination from '../components/Pagination';
 import { getGenreMapping, GENRES } from '../utils/genreMap';
-import { GenreSortBy } from '../services/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { GenreSortBy, getMediaByGenre } from '../services/api';
 import { useWatchRegion } from '../hooks/useWatchRegion';
 import { useOmdbBatch, OmdbItem } from '../services/omdb';
 import { Media } from '../types';
@@ -69,6 +70,8 @@ const GenrePage: React.FC = () => {
   const serverSort: GenreSortBy =
     sortBy === 'imdb' || sortBy === 'rt' ? 'popularity.desc' : (sortBy as GenreSortBy);
 
+  const queryClient = useQueryClient();
+
   const { moviesData, tvData, movieCount, tvCount, totalCount } = useGenreMedia({
     movieId: movieId || 0,
     tvId: tvId || 0,
@@ -78,6 +81,24 @@ const GenrePage: React.FC = () => {
     watchRegion,
     sortBy: serverSort,
   });
+
+  // Prefetch the next page as soon as current page data arrives, so navigation is instant
+  useEffect(() => {
+    if (activeTab === 'All' || !movieId || !tvId) return;
+
+    const isMovieTab  = activeTab === 'Movies';
+    const data        = isMovieTab ? moviesData : tvData;
+    const genreId     = isMovieTab ? movieId    : tvId;
+    const mediaType   = isMovieTab ? 'movie'    : 'tv';
+
+    if (!data || page >= data.total_pages) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ['mediaByGenre', mediaType, genreId, page + 1, activeProviders, watchRegion, serverSort],
+      queryFn:  () => getMediaByGenre(mediaType, genreId, page + 1, activeProviders, watchRegion, serverSort),
+      staleTime: 1000 * 60 * 5,
+    });
+  }, [moviesData, tvData, page, activeTab, movieId, tvId, activeProviders, watchRegion, serverSort]);
 
   // OMDb batch — only triggered when IMDb or RT sort is active
   const isClientSort = sortBy === 'imdb' || sortBy === 'rt';

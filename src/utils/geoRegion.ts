@@ -1,10 +1,10 @@
 /**
  * Detect the user's country code from their IP address.
  * Uses ip-api.com — free, no API key required, 45 req/min limit.
- * Returns ISO 3166-1 alpha-2 country code (e.g. "US", "GB", "DE").
- * Falls back to "US" on any failure (VPN, network error, etc.).
+ * Returns ISO 3166-1 alpha-2 country code (e.g. "US", "GB", "DK").
+ * Returns null on failure so callers can decide their own fallback.
  */
-export const detectWatchRegion = async (): Promise<string> => {
+export const detectWatchRegion = async (): Promise<string | null> => {
   try {
     const res = await fetch('https://ip-api.com/json?fields=countryCode', { cache: 'no-store' });
     const data = await res.json();
@@ -14,7 +14,26 @@ export const detectWatchRegion = async (): Promise<string> => {
   } catch {
     // silently fall through
   }
-  return 'US';
+  return null;
+};
+
+// Module-level cache so IP detection only happens once per session
+let cachedRegion: string | null = null;
+let detectionPromise: Promise<string | null> | null = null;
+
+/**
+ * Returns the IP-detected region, cached for the session.
+ * Only calls the API once; subsequent calls return the cached value.
+ */
+export const getDetectedRegion = (): Promise<string | null> => {
+  if (cachedRegion !== null) return Promise.resolve(cachedRegion);
+  if (!detectionPromise) {
+    detectionPromise = detectWatchRegion().then((region) => {
+      cachedRegion = region;
+      return region;
+    });
+  }
+  return detectionPromise;
 };
 
 /** Countries shown in the region selector, ordered by streaming market size. */
