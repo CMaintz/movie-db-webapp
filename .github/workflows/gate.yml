@@ -23,6 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          # Pin mise itself, not just the action. Left unpinned the action asks
+          # mise.jdx.dev/VERSION for "latest", which can advertise a version
+          # whose GitHub release assets are not published yet (v2026.9.3 did
+          # exactly that and 404'd). Bump deliberately.
+          version: 2026.9.2
       - run: npm ci
       # The exact same verb a developer runs locally. If this and `mise run gate`
       # on a laptop ever disagree, that is a bug in the setup, not in the code.
@@ -34,6 +40,12 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          # Pin mise itself, not just the action. Left unpinned the action asks
+          # mise.jdx.dev/VERSION for "latest", which can advertise a version
+          # whose GitHub release assets are not published yet (v2026.9.3 did
+          # exactly that and 404'd). Bump deliberately.
+          version: 2026.9.2
       - run: npm ci
       # knip / ts-morph / jscpd come from node_modules; the sensors themselves
       # are Python. .habit-hooks/snooze.json holds the accepted baseline.
@@ -43,6 +55,11 @@ jobs:
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
+    # gitleaks-action lists the PR's commits, which the default contents:read
+    # token cannot do. Narrowest permission that makes it work.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
