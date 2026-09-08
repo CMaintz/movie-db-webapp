@@ -1,0 +1,53 @@
+# Foundry verb interface — see github.com/CMaintz/foundry CONTRACT.md
+#
+# Every repo exposes these six verbs regardless of stack. CI, git hooks and
+# agent skills invoke ONLY these verbs, never the underlying tools. That is
+# what lets one skill library serve a React repo and a Kotlin repo alike.
+
+[tools]
+node = "22.14.0"
+
+[env]
+# Put local binaries on PATH so tasks call `eslint`, not `npx eslint`.
+_.path = ["./node_modules/.bin"]
+
+[tasks.fix]
+description = "Auto-fix what is mechanically fixable; never opinionated"
+# The prune pass drops suppressions whose violation no longer exists, which is
+# what makes the baseline a one-way ratchet: fix an `any`, and it can never be
+# silently re-suppressed.
+run = [
+    "eslint . --fix",
+    "eslint . --prune-suppressions",
+]
+
+[tasks.lint]
+description = "Style and smells; non-mutating"
+# Fails on new violations AND on stale suppressions, so the baseline cannot rot.
+# eslint-suppressions.json holds the accepted debt — it is committed, and it may
+# only ever shrink. Never add to it by hand; never delete it to make lint pass.
+run = "eslint ."
+
+[tasks.typecheck]
+description = "Static types (both tsconfigs set noEmit, so -b is a pure check)"
+run = "tsc -b"
+
+[tasks.test]
+description = "Tests with coverage floor"
+run = "vitest run --coverage"
+
+[tasks.audit]
+description = "Dependency vulnerabilities. Local subset; CI Tier 0 adds gitleaks/osv-scanner/semgrep"
+run = "npm audit --audit-level=critical"
+
+[tasks.gate]
+description = "The authoritative composite — the oracle. Nothing merges without this green."
+# Array form runs sequentially. Do NOT use `depends`: mise runs dependencies in
+# parallel with no ordering guarantee, which makes gate output unreadable and
+# hides which check failed first.
+run = [
+    "mise run lint",
+    "mise run typecheck",
+    "mise run test",
+    "mise run audit",
+]
