@@ -1,0 +1,5 @@
+# Generated ratchet baselines are rewritten by tooling (eslint --prune-suppressions,
+# habit-snooze). Pin them to LF so core.autocrlf doesn't report a phantom modified
+# file with an empty content diff — which otherwise trips ruleset-guard on unrelated PRs.
+eslint-suppressions.json text eol=lf
+.habit-hooks/snooze.json text eol=lf
