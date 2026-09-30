@@ -2,20 +2,22 @@
 
 [![CI](https://github.com/CMaintz/movie-db-webapp/actions/workflows/ci.yml/badge.svg)](https://github.com/CMaintz/movie-db-webapp/actions/workflows/ci.yml)
 
-A single-page app for browsing movies and TV shows from [TMDB](https://www.themoviedb.org/), with Firebase sign-in and a personal wishlist stored in Firestore.
+My TMDB browser: a single-page app for browsing movies and TV shows from [TMDB](https://www.themoviedb.org/), with Firebase sign-in and a personal wishlist in Firestore. Basically a place to park "we should watch that sometime" before it's forgotten.
 
-**Live demo:** https://cmaintz.github.io/movie-db-webapp/
+It also spawned [MovieWheel](https://github.com/CMaintz/movie-wheel), which deals with the other half of the problem: actually picking something tonight. (There was a webOS TV version of this app at some point too; it isn't in this repo.)
+
+Live demo: https://cmaintz.github.io/movie-db-webapp/
 
 ![Home page with genre rows of movies and TV shows](docs/screenshot.png)
 
-## Features
+## What you can do
 
-- **Genre browsing:** the home page shows nine fixed genres. Each row merges movies and TV shows, sorted by popularity, and has "Load more".
-- **Genre pages** (`/genre/:genreName`): All / Movies / TV tabs, with pagination capped at TMDB's 500-page limit.
-- **Details pages** (`/movie/:id`, `/tv/:id`): overview, rating, director or creators, a cast carousel, the YouTube trailer, and seasons for TV.
-- **Accounts:** email/password sign-up and login through Firebase Authentication, plus an editable display name.
-- **Wishlist:** signed-in users can save titles from any card or details page. Items are stored per user in Firestore and shown on `/wishlist`.
-- **Layout:** dark theme, with a bottom navigation bar on small screens.
+- Genre browsing: the home page shows nine fixed genres. Each row merges movies and TV shows, sorted by popularity, and has "Load more".
+- Genre pages (`/genre/:genreName`): All / Movies / TV tabs, with pagination capped at TMDB's 500-page limit.
+- Details pages (`/movie/:id`, `/tv/:id`): overview, rating, director or creators, a cast carousel, the YouTube trailer, and seasons for TV.
+- Accounts: email/password sign-up and login through Firebase Authentication, plus an editable display name.
+- Wishlist: signed-in users can save titles from any card or details page. Items are stored per user in Firestore and shown on `/wishlist`.
+- Layout: dark theme, with a bottom navigation bar on small screens.
 
 ## Tech stack
 
@@ -57,11 +59,11 @@ src/
 
 ## Scope and limitations
 
-- **Client-only, so the TMDB key is public.** The key is compiled into the JavaScript bundle and anyone can read it. Hiding it would need a small proxy (for example a serverless function); that is out of scope here. The Firebase web config is public by design, and access is enforced by `firestore.rules`.
-- **Fixed genres.** The nine genres are hard-coded in `src/utils/genreMap.ts`. TMDB keeps separate genre lists for movies and TV. Thriller and War map to the nearest TV genres (Mystery, War & Politics). Romance and Horror have no TV equivalent, so those rows are effectively movie-only.
-- **English-language results only.** Queries filter on `with_original_language=en`.
-- **Not included:** search, password reset, social login, and wishlist sorting or notes.
-- **Tests:** they cover the services, hooks, formatting utilities, route guard, auth provider and several components and pages (roughly half of all lines). Home, Login, Register, Navbar and the details page are not yet tested.
+- Client-only, so the TMDB key is public. The key is compiled into the JavaScript bundle and anyone can read it. Hiding it would need a small proxy (for example a serverless function); that is out of scope here. The Firebase web config is public by design, and access is enforced by `firestore.rules`.
+- Fixed genres. The nine genres are hard-coded in `src/utils/genreMap.ts`. TMDB keeps separate genre lists for movies and TV. Thriller and War map to the nearest TV genres (Mystery, War & Politics). Romance and Horror have no TV equivalent, so those rows are effectively movie-only.
+- English-language results only. Queries filter on `with_original_language=en`.
+- Not included: search, password reset, social login, and wishlist sorting or notes.
+- Tests: they cover the services, hooks, formatting utilities, route guard, auth provider and several components and pages (roughly half of all lines). Home, Login, Register, Navbar and the details page are not tested yet. On the list.
 
 ## Getting started
 
@@ -108,9 +110,9 @@ Tests sit next to the code as `*.test.ts(x)` and run in jsdom. Firebase is never
 
 ## CI and deployment
 
-- **CI** (`.github/workflows/ci.yml`) runs on pushes to `master` and on pull requests: typecheck, lint, tests with coverage thresholds, then build.
-- **Deploy** (`.github/workflows/deploy.yml`) runs on push to `master`. It builds with the `VITE_*` values from repository secrets and publishes to GitHub Pages with `actions/deploy-pages`. It also writes `404.html` as a copy of `index.html` so deep links survive a refresh. Pages must be set to deploy from GitHub Actions.
-- **Firestore rules** are deployed separately:
+- CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on pull requests: typecheck, lint, tests with coverage thresholds, then build.
+- Deploy (`.github/workflows/deploy.yml`) runs on push to `master`. It builds with the `VITE_*` values from repository secrets and publishes to GitHub Pages with `actions/deploy-pages`. It also writes `404.html` as a copy of `index.html` so deep links survive a refresh. Pages must be set to deploy from GitHub Actions.
+- Firestore rules are deployed separately:
 
   ```bash
   npx firebase-tools deploy --only firestore:rules --project <your-project-id>
