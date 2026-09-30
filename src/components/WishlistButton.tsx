@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IconButton, SxProps, Theme, Tooltip, keyframes } from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/useAuth';
 import { MediaType } from '../types';

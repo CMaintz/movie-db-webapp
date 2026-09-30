@@ -12,7 +12,9 @@ import {
     Stack,
     Divider,
 } from '@mui/material';
-import { Person, Edit, Logout } from '@mui/icons-material';
+import Person from '@mui/icons-material/Person';
+import Edit from '@mui/icons-material/Edit';
+import Logout from '@mui/icons-material/Logout';
 import { useAuth } from '../context/useAuth';
 
 const ProfilePage: React.FC = () => {

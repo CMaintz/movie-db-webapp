@@ -19,16 +19,14 @@ import {
     BottomNavigationAction,
     Fab,
 } from '@mui/material';
-import {
-    AccountCircle,
-    Home,
-    Category,
-    Favorite,
-    Menu as MenuIcon,
-    Login,
-    PersonAdd,
-    Person,
-} from '@mui/icons-material';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Home from '@mui/icons-material/Home';
+import Category from '@mui/icons-material/Category';
+import Favorite from '@mui/icons-material/Favorite';
+import MenuIcon from '@mui/icons-material/Menu';
+import Login from '@mui/icons-material/Login';
+import PersonAdd from '@mui/icons-material/PersonAdd';
+import Person from '@mui/icons-material/Person';
 import { useAuth } from '../context/useAuth';
 import React, { useState, useEffect } from 'react';
 

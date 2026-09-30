@@ -3,7 +3,7 @@ import { Grid, Box, Typography, Button, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Media } from '../types';
 import MediaCard from './MediaCard';
-import { ArrowForward } from '@mui/icons-material';
+import ArrowForward from '@mui/icons-material/ArrowForward';
 
 interface MediaGridProps {
     media: Media[];

@@ -8,7 +8,7 @@ import {
     useTheme,
     useMediaQuery,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import { useMediaDetails } from '../services/apiService';
