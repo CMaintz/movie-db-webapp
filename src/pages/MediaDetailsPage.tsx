@@ -1,50 +1,35 @@
-/**
- * Media Details Page Component
- * 
- * Displays detailed information about a movie or TV show.
- * Handles the rendering of media information, cast, trailers, and related data.
- * Adapts display based on media type (movie vs TV show) and screen size.
- */
 import React, { useState } from 'react';
 import {
     Box,
     Typography,
     IconButton,
     Stack,
-    Chip,
     CircularProgress,
     useTheme,
     useMediaQuery,
-    Grid,
-    Paper,
-    Skeleton
 } from '@mui/material';
-import { ArrowBack} from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import { useNavigate, useParams } from 'react-router-dom';
-
-import { useMediaDetails } from '../services/apiService.ts';
-
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
-import { MovieDetails, SeriesDetails, Genre, MediaDetails } from '../types';
+import { useMediaDetails } from '../services/apiService';
+import { MovieDetails, SeriesDetails, MediaDetails, MediaType } from '../types';
+import { MediaHeader } from '../components/media-details/MediaHeader';
+import { MediaOverview } from '../components/media-details/MediaOverview';
+import { MediaCast } from '../components/media-details/MediaCast';
+import { MediaTrailer } from '../components/media-details/MediaTrailer';
+import { MediaSeasons } from '../components/media-details/MediaSeasons';
 
-import {MediaHeader} from '../components/media-details/MediaHeader';
-import {MediaOverview} from '../components/media-details/MediaOverview';
-import {MediaCast} from '../components/media-details/MediaCast';
-import {MediaTrailer} from '../components/media-details/MediaTrailer';
-import {MediaSeasons} from '../components/media-details/MediaSeasons';
-
+const isMovieDetails = (media: MediaDetails): media is MovieDetails => media.media_type === 'movie';
+const isSeriesDetails = (media: MediaDetails): media is SeriesDetails => media.media_type === 'tv';
 
 const MediaDetailsPage: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const { mediaType, id } = useParams<{ mediaType: string; id: string }>();
-    
-    // Fetch media details from the API based on the mediaType and id from URL params
-    const { data: media, isLoading, error } = useMediaDetails(mediaType as 'movie' | 'tv', Number(id));
+    const { mediaType, id } = useParams<{ mediaType: MediaType; id: string }>();
+    const { data: media, isLoading, error } = useMediaDetails(mediaType ?? 'movie', Number(id));
     const [autoPlay, setAutoPlay] = useState(true);
 
-    // Display loading state while fetching data
     if (isLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -53,7 +38,6 @@ const MediaDetailsPage: React.FC = () => {
         );
     }
 
-    // Handle error states
     if (error || !media) {
         return (
             <Box sx={{ p: 4 }}>
@@ -62,19 +46,8 @@ const MediaDetailsPage: React.FC = () => {
         );
     }
 
-    // Type guard to check if media is MovieDetails
-    const isMovieDetails = (media: MediaDetails): media is MovieDetails => {
-    return media.media_type === 'movie';
-    };
-
-    // Type guard to check if media is SeriesDetails
-    const isSeriesDetails = (media: MediaDetails): media is SeriesDetails => {
-    return media.media_type === 'tv';
-    };
-
-    // Get director for movies or creators for TV shows
-    const director = isMovieDetails(media) ? media?.credits?.crew?.find(person => person.job === 'Director') ?? null : null;
-    const creators = isSeriesDetails(media) ? media?.created_by : [];
+    const director = isMovieDetails(media) ? media.credits?.crew?.find(person => person.job === 'Director') ?? null : null;
+    const creators = isSeriesDetails(media) ? media.created_by : [];
 
     return (
         <Box sx={{
@@ -88,7 +61,6 @@ const MediaDetailsPage: React.FC = () => {
             overflowY: 'auto',
             overflowX: 'hidden',
         }}>
-            {/* Background Image Section */}
             <Box
                 sx={{
                     position: 'fixed',
@@ -118,9 +90,9 @@ const MediaDetailsPage: React.FC = () => {
                 }}
             />
 
-            {/* Navigation Back Button */}
             <IconButton
                 onClick={() => navigate(-1)}
+                aria-label="Go back"
                 sx={{
                     position: 'fixed',
                     left: 16,
@@ -136,14 +108,8 @@ const MediaDetailsPage: React.FC = () => {
                 <ArrowBack />
             </IconButton>
 
-            {/* Media Header */}
-            <MediaHeader 
-            media={media} 
-            director={director}
-            creators={creators}
-        />
+            <MediaHeader media={media} director={director} creators={creators} />
 
-            {/* Content Section */}
             <Box sx={{
                 position: 'relative',
                 mt: -4,
@@ -158,24 +124,18 @@ const MediaDetailsPage: React.FC = () => {
                 px: { xs: 2, sm: 3 },
             }}>
                 <Stack spacing={4}>
-                      <MediaOverview 
-                    media={media}
-                    director={director}
-                    creators={creators}
-                />
-                    
-                                {media.credits?.cast?.length > 0 && (
-                        <MediaCast 
+                    <MediaOverview media={media} director={director} creators={creators} />
+
+                    {media.credits?.cast?.length > 0 && (
+                        <MediaCast
                             cast={media.credits.cast}
                             isMobile={isMobile}
-                                                autoPlay={autoPlay}
+                            autoPlay={autoPlay}
                             setAutoPlay={setAutoPlay}
                         />
                     )}
 
-                    {media.videos?.results && (
-                        <MediaTrailer videos={media.videos.results} />
-                    )}
+                    {media.videos?.results && <MediaTrailer videos={media.videos.results} />}
 
                     {isSeriesDetails(media) && media.seasons?.length > 0 && (
                         <MediaSeasons seasons={media.seasons} />

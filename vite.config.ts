@@ -1,9 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const isProd = process.env.NODE_ENV === 'production';
-
-export default defineConfig({
-  base: isProd ? '/Movie_DB_Webapp/' : '/',
+export default defineConfig(({ mode }) => ({
+  // `vite build` and `vite preview` both default to production mode, so they agree on the Pages sub-path
+  base: mode === 'production' ? '/movie-db-webapp/' : '/',
   plugins: [react()],
-});
+}));

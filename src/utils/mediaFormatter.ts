@@ -1,36 +1,30 @@
 import { Media, MovieDetails, SeriesDetails } from '../types';
 
-export const formatMediaDateRange = (media: Media, showFullRange: boolean = false) => {
+// TMDB dates are YYYY-MM-DD, which Date parses as UTC midnight; read the year in UTC too
+const yearOf = (date: string | undefined): string =>
+    date ? new Date(date).getUTCFullYear().toString() : '';
+
+export const formatMediaDateRange = (media: Media, showFullRange: boolean = false): string => {
     if (media.media_type === 'tv') {
-        const seriesMedia = media as SeriesDetails;
-        const startYear = seriesMedia.first_air_date ? new Date(seriesMedia.first_air_date).getFullYear() : '';
+        const series = media as SeriesDetails;
+        const startYear = yearOf(series.first_air_date);
         if (!startYear) return '';
 
-        // Only show full range if explicitly requested (for details page)
-        if (showFullRange && (seriesMedia.status === 'Ended' || seriesMedia.status === 'Canceled')) {
-            const endYear = seriesMedia.last_air_date ? new Date(seriesMedia.last_air_date).getFullYear() : '';
+        if (showFullRange && (series.status === 'Ended' || series.status === 'Canceled')) {
+            const endYear = yearOf(series.last_air_date);
             return endYear ? `${startYear} - ${endYear}` : startYear;
         }
 
-        // For MediaCard, just show start year
         return startYear;
     }
-    const movieMedia = media as MovieDetails;
-    return movieMedia.release_date ? new Date(movieMedia.release_date).getFullYear() : '';
+    return yearOf((media as MovieDetails).release_date);
 };
 
-export const formatMediaRuntime = (media: Media) => {
-    if (media.media_type === 'movie') {
-        const movieMedia = media as MovieDetails;
-        if (movieMedia.runtime) {
-            const hours = Math.floor(movieMedia.runtime / 60);
-            const minutes = movieMedia.runtime % 60;
-            return `${hours}h ${minutes}m`;
-        }
-    }
-    return null;
+export const formatMediaRuntime = (media: Media): string | null => {
+    if (media.media_type !== 'movie') return null;
+    const { runtime } = media as MovieDetails;
+    if (!runtime) return null;
+    return `${Math.floor(runtime / 60)}h ${runtime % 60}m`;
 };
 
-export const formatSeasonYear = (airDate: string): string => {
-    return airDate ? new Date(airDate).getFullYear().toString() : '';
-};
+export const formatSeasonYear = (airDate: string | null | undefined): string => yearOf(airDate ?? undefined);

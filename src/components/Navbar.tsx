@@ -19,17 +19,15 @@ import {
     BottomNavigationAction,
     Fab,
 } from '@mui/material';
-import {
-    AccountCircle,
-    Home,
-    Category,
-    Favorite,
-    Menu as MenuIcon,
-    Login,
-    PersonAdd,
-    Person,
-} from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Home from '@mui/icons-material/Home';
+import Category from '@mui/icons-material/Category';
+import Favorite from '@mui/icons-material/Favorite';
+import MenuIcon from '@mui/icons-material/Menu';
+import Login from '@mui/icons-material/Login';
+import PersonAdd from '@mui/icons-material/PersonAdd';
+import Person from '@mui/icons-material/Person';
+import { useAuth } from '../context/useAuth';
 import React, { useState, useEffect } from 'react';
 
 const Navbar = () => {
@@ -42,7 +40,6 @@ const Navbar = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [value, setValue] = useState(0);
 
-    // Update the bottom navigation value based on current route
     useEffect(() => {
         const path = location.pathname;
         if (path === '/') {
@@ -159,7 +156,7 @@ const Navbar = () => {
                 </Fab>
                 <BottomNavigation
                     value={value}
-                    onChange={(event, newValue) => {
+                    onChange={(_event, newValue) => {
                         setValue(newValue);
                         switch(newValue) {
                             case 0:

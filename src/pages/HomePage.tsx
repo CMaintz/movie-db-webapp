@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container } from '@mui/material';
 import MediaGrid from '../components/MediaGrid';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,7 @@ const HomePage: React.FC = () => {
     const navigate = useNavigate();
 
     const handleGenreClick = (genreName: string) => {
-        navigate(`/genre/${genreName}`, {
-        
-        });
+        navigate(`/genre/${genreName}`);
     };
 
     return (
@@ -50,7 +48,6 @@ const GenreSection: React.FC<{
         page
     });
 
-    // Accumulate fetched media
     useEffect(() => {
         if (combinedMedia && combinedMedia.length > 0) {
             setAllMedia(prev => {
@@ -66,10 +63,8 @@ const GenreSection: React.FC<{
         const nextVisibleCount = visibleCount + itemsPerPage;
 
         if (nextVisibleCount <= allMedia.length) {
-            // Just show more of what we have
             setVisibleCount(nextVisibleCount);
         } else if (allMedia.length < totalCount) {
-            // Need to fetch more data
             setPage(prev => prev + 1);
             setVisibleCount(nextVisibleCount);
         }

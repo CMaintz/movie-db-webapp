@@ -1,97 +1,45 @@
-/**
- * WishlistButton Component
- * 
- * Interactive button for adding/removing media items to a user's wishlist
- * Features:
- * - Visual feedback with animation on adding to wishlist
- * - Login tooltip prompt for unauthenticated users
- * - Toggle between filled/outline heart icon based on wishlist status
- */
 import React, { useState } from 'react';
-import { IconButton, Tooltip, keyframes } from '@mui/material';
-import { Favorite, FavoriteBorder } from '@mui/icons-material';
+import { IconButton, SxProps, Theme, Tooltip, keyframes } from '@mui/material';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import { useWishlist } from '../hooks/useWishlist';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { MediaType } from '../types';
 
-/**
- * Heartbeat animation keyframes
- * Creates a pulsing effect when an item is added to the wishlist
- */
 const heartbeat = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.3);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 `;
 
-/**
- * Props for the WishlistButton component
- * @property mediaId - The ID of the media item
- * @property mediaType - The type of media ('movie' or 'tv')
- * @property sx - Additional Material UI styling
- * @property onWishlistChange - Callback function when wishlist status changes
- */
 interface WishlistButtonProps {
     mediaId: number;
-    mediaType: 'movie' | 'tv';
-    sx?: any;
-    onWishlistChange?: (isWishlisted: boolean) => void;
+    mediaType: MediaType;
+    sx?: SxProps<Theme>;
 }
 
-const WishlistButton: React.FC<WishlistButtonProps> = ({ mediaId, mediaType, sx, onWishlistChange}) => {
+const WishlistButton: React.FC<WishlistButtonProps> = ({ mediaId, mediaType, sx }) => {
     const { user } = useAuth();
-    const { isInWishlist, addToWishlist, removeFromWishlist, refreshWishlist } = useWishlist();
-    
-    // Animation control states
+    const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     const [shouldAnimate, setShouldAnimate] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    // Check if the current media item is in the user's wishlist
     const isWishlisted = isInWishlist(mediaId, mediaType);
 
-    /**
-     * Handle wishlist button click
-     * - Prevents event propagation (important when button is inside clickable card)
-     * - Shows login tooltip if user is not authenticated
-     * - Toggles wishlist status and updates both local state and database
-     * - Triggers animation when adding to wishlist
-     * - Notifies parent component of status change via callback
-     */
-    const handleWishlistClick = async (e: React.MouseEvent) => {
+    const handleClick = async (e: React.MouseEvent) => {
+        // The button sits inside a clickable card
         e.stopPropagation();
-        
-        // Show login tooltip if user is not authenticated
+
         if (!user) {
             setShowTooltip(true);
             return;
         }
-        
-        let success = false;
-        
-        // Remove from wishlist if already added
+
         if (isWishlisted) {
-            success = await removeFromWishlist(mediaId, mediaType);
-        } 
-        // Add to wishlist and trigger animation
-        else {
-            success = await addToWishlist(mediaId, mediaType);
-            if (success) {
-                setShouldAnimate(true);
-                setTimeout(() => setShouldAnimate(false), 500);
-            }
-        }
-        
-        // If operation was successful, notify parent and refresh wishlist
-        if (success) {
-            if (onWishlistChange) {
-                onWishlistChange(!isWishlisted);
-            }
-            await refreshWishlist();
+            await removeFromWishlist(mediaId, mediaType);
+        } else if (await addToWishlist(mediaId, mediaType)) {
+            setShouldAnimate(true);
+            setTimeout(() => setShouldAnimate(false), 500);
         }
     };
 
@@ -104,19 +52,19 @@ const WishlistButton: React.FC<WishlistButtonProps> = ({ mediaId, mediaType, sx,
             arrow
         >
             <IconButton
-                onClick={handleWishlistClick}
-                sx={{
-                    ...sx,
-                    '& .MuiSvgIcon-root': {
-                        animation: shouldAnimate ? `${heartbeat} 0.5s ease-in-out` : 'none',
-                    }
-                }}
+                onClick={handleClick}
+                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                aria-pressed={isWishlisted}
+                sx={[
+                    {
+                        '& .MuiSvgIcon-root': {
+                            animation: shouldAnimate ? `${heartbeat} 0.5s ease-in-out` : 'none',
+                        },
+                    },
+                    ...(Array.isArray(sx) ? sx : [sx]),
+                ]}
             >
-                {isWishlisted ? (
-                    <Favorite color="error" />
-                ) : (
-                    <FavoriteBorder sx={{ color: 'white' }} />
-                )}
+                {isWishlisted ? <Favorite color="error" /> : <FavoriteBorder sx={{ color: 'white' }} />}
             </IconButton>
         </Tooltip>
     );

@@ -1,8 +1,3 @@
-/**
- * MediaCard Component
- * Displays a card for a movie or TV show with poster, title, and rating
- * Includes wishlist functionality and navigation to detail page
- */
 import React from 'react';
 import {
     Card,
@@ -18,47 +13,16 @@ import { Media } from '../types';
 import MediaRating from './MediaRating';
 import WishlistButton from './WishlistButton';
 
-/**
- * Props for MediaCard component
- * @property {Media} media - The media item to display
- * @property {boolean} showType - Whether to show media type (movie/TV) badge
- * @property {Function} onWishlistChange - Callback for wishlist changes
- */
 interface MediaCardProps {
     media: Media;
     showType?: boolean;
-    onWishlistChange?: (mediaId: number, mediaType: 'movie' | 'tv', isWishlisted: boolean) => void;
 }
 
-/**
- * Card component for displaying movie or TV show information
- * Features:
- * - Clickable card that navigates to detail page
- * - Poster image with fallback skeleton
- * - Media type badge (optional)
- * - Wishlist toggle button
- * - Title and rating display
- */
-const MediaCard: React.FC<MediaCardProps> = ({ media, showType = true, onWishlistChange}) => {
+const MediaCard: React.FC<MediaCardProps> = ({ media, showType = true }) => {
     const navigate = useNavigate();
 
-    /**
-     * Handles click on the card to navigate to detail page
-     */
     const handleClick = () => {
-        navigate(`/${media.media_type === 'movie' ? 'movie' : 'tv'}/${media.id}`, {
-            state: { backgroundLocation: window.location.pathname }
-        });
-    };
-
-    /**
-     * Handles wishlist button click
-     * Calls parent callback if provided
-     */
-    const handleWishlistChange = (isWishlisted: boolean) => {
-        if (onWishlistChange) {
-            onWishlistChange(media.id, media.media_type, isWishlisted);
-        }
+        navigate(`/${media.media_type}/${media.id}`);
     };
 
     return (
@@ -76,7 +40,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ media, showType = true, onWishlis
             }}
             onClick={handleClick}
         >
-            {/* Image container with wishlist button and type badge */}
             <Box sx={{ position: 'relative' }}>
                 {media.poster_path ? (
                     <CardMedia
@@ -92,23 +55,20 @@ const MediaCard: React.FC<MediaCardProps> = ({ media, showType = true, onWishlis
                         variant="rectangular"
                         animation="wave"
                         sx={{
-                            paddingTop: '150%', // 2:3 aspect ratio for posters
+                            paddingTop: '150%', // 2:3 poster aspect ratio
                             bgcolor: 'grey.800'
                         }}
                     />
                 )}
-                {/* Wishlist button overlay */}
                 <WishlistButton
                     mediaId={media.id}
                     mediaType={media.media_type}
-                    onWishlistChange={handleWishlistChange}
                     sx={{
                         position: 'absolute',
                         top: '0.5rem',
                         right: '0.5rem',
                     }}
                 />
-                {/* Media type badge (movie/TV) */}
                 {showType && (
                     <Chip
                         label={media.media_type === 'movie' ? 'Movie' : 'Series'}
@@ -130,7 +90,6 @@ const MediaCard: React.FC<MediaCardProps> = ({ media, showType = true, onWishlis
                     />
                 )}
             </Box>
-            {/* Card content with title and rating */}
             <CardContent sx={{
                 flexGrow: 1,
                 display: 'flex',

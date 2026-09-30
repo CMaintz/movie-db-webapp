@@ -9,13 +9,12 @@ import {
     Link,
     Alert,
     Paper,
-    useTheme,
-    useMediaQuery,
     InputAdornment,
     IconButton,
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { useAuth } from '../context/useAuth';
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -25,8 +24,6 @@ const LoginPage: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const { signIn } = useAuth();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,7 +33,7 @@ const LoginPage: React.FC = () => {
         try {
             await signIn(email, password);
             navigate('/');
-        } catch (err) {
+        } catch {
             setError('Failed to sign in. Please check your credentials.');
         } finally {
             setLoading(false);

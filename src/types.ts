@@ -1,9 +1,11 @@
+export type MediaType = 'movie' | 'tv';
+
 export interface MediaBase {
     id: number;
     title: string;
     poster_path: string;
     vote_average: number;
-    media_type: 'movie' | 'tv';
+    media_type: MediaType;
 }
 
 export interface Media extends MediaBase {
@@ -54,6 +56,7 @@ export interface MediaDetails extends Media {
         }>;
     };
     status: string;
+    release_date?: string;
 }
 
 export interface MovieDetails extends MediaDetails {
