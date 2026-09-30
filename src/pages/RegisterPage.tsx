@@ -13,7 +13,7 @@ import {
     IconButton,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 const RegisterPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -40,7 +40,7 @@ const RegisterPage: React.FC = () => {
         try {
             await signUp(email, password);
             navigate('/');
-        } catch (err) {
+        } catch {
             setError('Failed to create an account. Please try again.');
         } finally {
             setLoading(false);

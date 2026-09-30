@@ -29,7 +29,7 @@ import {
     PersonAdd,
     Person,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import React, { useState, useEffect } from 'react';
 
 const Navbar = () => {
@@ -42,7 +42,6 @@ const Navbar = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [value, setValue] = useState(0);
 
-    // Update the bottom navigation value based on current route
     useEffect(() => {
         const path = location.pathname;
         if (path === '/') {
@@ -159,7 +158,7 @@ const Navbar = () => {
                 </Fab>
                 <BottomNavigation
                     value={value}
-                    onChange={(event, newValue) => {
+                    onChange={(_event, newValue) => {
                         setValue(newValue);
                         switch(newValue) {
                             case 0:

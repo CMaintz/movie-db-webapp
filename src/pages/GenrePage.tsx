@@ -1,14 +1,5 @@
-/**
- * Genre Page Component
- * 
- * Displays movies and TV shows filtered by a specific genre.
- * Features:
- * - Genre selection dropdown
- * - Tabbed interface for All/Movies/TV Shows
- * - Pagination for browsing large result sets
- */
-import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Container,
     Box,
@@ -26,26 +17,19 @@ import MediaGrid from '../components/MediaGrid';
 import Pagination from '../components/Pagination';
 import { getGenreMapping, GENRES } from '../utils/genreMap';
 
-/**
- * Tab panel component for organizing content in tabs
- * Used to create the All/Movies/TV Shows tabs
- */
 interface TabPanelProps {
     children?: React.ReactNode;
     index: number;
     value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
-
+function TabPanel({ children, value, index }: TabPanelProps) {
     return (
         <div
             role="tabpanel"
             hidden={value !== index}
             id={`genre-tabpanel-${index}`}
             aria-labelledby={`genre-tab-${index}`}
-            {...other}
         >
             {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
         </div>
@@ -53,29 +37,19 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const GenrePage: React.FC = () => {
-    const { name } = useParams<{ name: string }>();
-    const location = useLocation();
+    const { genreName: selectedGenre = 'Action' } = useParams<{ genreName: string }>();
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [tabValue, setTabValue] = useState(0);
-    const [selectedGenre, setSelectedGenre] = useState<string>('Action');
-    const [movieId, setMovieId] = useState<number | undefined>();
-    const [tvId, setTvId] = useState<number | undefined>();
+    const [previousGenre, setPreviousGenre] = useState(selectedGenre);
 
-    // Initialize genre IDs
-    useEffect(() => {
-        const genreName = name || location.state?.genreName || selectedGenre;
-        if (genreName) {
-            setSelectedGenre(genreName);
-            const mapping = getGenreMapping(genreName);
-            if (mapping) {
-                setMovieId(mapping.movieId);
-                setTvId(mapping.tvId);
-            }
-        }
-    }, [name, location.state, selectedGenre]);
+    if (previousGenre !== selectedGenre) {
+        setPreviousGenre(selectedGenre);
+        setPage(1);
+    }
 
-    // Fetch media data for the selected genre using the useGenreMedia hook
+    const mapping = getGenreMapping(selectedGenre);
+
     const {
         moviesData,
         tvData,
@@ -84,39 +58,28 @@ const GenrePage: React.FC = () => {
         combinedMedia,
         totalCount
     } = useGenreMedia({
-        movieId: movieId || 0,
-        tvId: tvId || 0,
+        movieId: mapping?.movieId ?? 0,
+        tvId: mapping?.tvId ?? 0,
         page,
     });
 
-    // Handle tab changes between All/Movies/TV Shows and reset pagination
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
-        setPage(1); // Reset page when switching tabs
+        setPage(1);
     };
 
-    // Handle genre selection from dropdown
     const handleGenreChange = (event: SelectChangeEvent) => {
-        const newGenre = event.target.value;
-        setSelectedGenre(newGenre);
-        navigate(`/genre/${newGenre}`);
+        navigate(`/genre/${event.target.value}`);
     };
 
-    // Handle pagination changes
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
-    // Show error if genre IDs couldn't be resolved
-    if (!movieId || !tvId) {
+    if (!mapping) {
         return (
             <Container>
-                <Typography color="error">Invalid genre</Typography>
+                <Typography color="error">Unknown genre: {selectedGenre}</Typography>
             </Container>
         );
     }
 
-    // Filter combined media based on selected tab
     const filteredMedia = tabValue === 0
         ? combinedMedia
         : tabValue === 1
@@ -126,7 +89,6 @@ const GenrePage: React.FC = () => {
     return (
         <Container maxWidth={false}>
             <Box sx={{ py: 4 }}>
-                {/* Header with title and genre selector dropdown */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                     <Typography variant="h4" component="h1">
                         Browse by Genre
@@ -218,9 +180,9 @@ const GenrePage: React.FC = () => {
 
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={tabValue} onChange={handleTabChange}>
-                        <Tab label={`All (${totalCount.toLocaleString()} titles)`} />
-                        <Tab label={`Movies (${movieCount.toLocaleString()} titles)`} />
-                        <Tab label={`TV Shows (${tvCount.toLocaleString()} titles)`} />
+                        <Tab id="genre-tab-0" aria-controls="genre-tabpanel-0" label={`All (${totalCount.toLocaleString()} titles)`} />
+                        <Tab id="genre-tab-1" aria-controls="genre-tabpanel-1" label={`Movies (${movieCount.toLocaleString()} titles)`} />
+                        <Tab id="genre-tab-2" aria-controls="genre-tabpanel-2" label={`TV Shows (${tvCount.toLocaleString()} titles)`} />
                     </Tabs>
                 </Box>
 
@@ -237,7 +199,7 @@ const GenrePage: React.FC = () => {
                         <Pagination
                             currentPage={page}
                             totalPages={Math.max(moviesData?.total_pages || 0, tvData?.total_pages || 0)}
-                            onPageChange={handlePageChange}
+                            onPageChange={setPage}
                         />
                     </Box>
                 </TabPanel>
@@ -254,7 +216,7 @@ const GenrePage: React.FC = () => {
                         <Pagination
                             currentPage={page}
                             totalPages={moviesData?.total_pages || 0}
-                            onPageChange={handlePageChange}
+                            onPageChange={setPage}
                         />
                     </Box>
                 </TabPanel>
@@ -271,7 +233,7 @@ const GenrePage: React.FC = () => {
                         <Pagination
                             currentPage={page}
                             totalPages={tvData?.total_pages || 0}
-                            onPageChange={handlePageChange}
+                            onPageChange={setPage}
                         />
                     </Box>
                 </TabPanel>

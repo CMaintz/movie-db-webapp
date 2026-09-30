@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useMediaByGenre, useMediaCountByGenre } from '../services/apiService.ts';
-import { Media } from '../types';
+import { useMediaByGenre, useMediaCountByGenre } from '../services/apiService';
+import { Media, MediaResponse } from '../types';
 
 interface UseGenreMediaProps {
     movieId: number;
@@ -9,8 +9,8 @@ interface UseGenreMediaProps {
 }
 
 interface UseGenreMediaResult {
-    moviesData: any;
-    tvData: any;
+    moviesData: MediaResponse | undefined;
+    tvData: MediaResponse | undefined;
     moviesLoading: boolean;
     tvLoading: boolean;
     movieCount: number;
@@ -19,10 +19,10 @@ interface UseGenreMediaResult {
     totalCount: number;
 }
 
-// Helper function to deduplicate media items based on both id and media_type
-const dedupeMedia = (media: Media[]) => {
-    const seen = new Set();
-    return media.filter(item => {
+// Movie and TV ids come from separate TMDB id spaces, so the key must include the type
+export const dedupeMedia = (media: Media[]): Media[] => {
+    const seen = new Set<string>();
+    return media.filter((item) => {
         const key = `${item.media_type}-${item.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
@@ -30,49 +30,28 @@ const dedupeMedia = (media: Media[]) => {
     });
 };
 
-export const useGenreMedia = ({
-    movieId,
-    tvId,
-    page
-}: UseGenreMediaProps): UseGenreMediaResult => {
-    // Fetch movies and TV shows for the specified genre IDs
+export const mergeByPopularity = (movies: Media[], shows: Media[]): Media[] =>
+    dedupeMedia([...movies, ...shows].sort((a, b) => b.popularity - a.popularity));
+
+export const useGenreMedia = ({ movieId, tvId, page }: UseGenreMediaProps): UseGenreMediaResult => {
     const { data: moviesData, isLoading: moviesLoading } = useMediaByGenre('movie', movieId, page);
     const { data: tvData, isLoading: tvLoading } = useMediaByGenre('tv', tvId, page);
+    const { data: movieCount = 0 } = useMediaCountByGenre('movie', movieId);
+    const { data: tvCount = 0 } = useMediaCountByGenre('tv', tvId);
 
-    // Fetch the total count of movies and TV shows for the genres
-    const { data: movieCount } = useMediaCountByGenre('movie', movieId);
-    const { data: tvCount } = useMediaCountByGenre('tv', tvId);
-
-    /**
-     * Combine, deduplicate, and sort media items by popularity
-     * Memoized to prevent unnecessary recalculation on every render
-     */
     const combinedMedia = useMemo(() => {
-        if (!moviesData?.results || !tvData?.results) return [];
-
-        // Combine movies and TV shows into a single array
-        const newItems = [
-            ...(moviesData.results || []),
-            ...(tvData.results || [])
-        ];
-
-        // Sort by popularity in descending order
-        const sortedItems = newItems.sort((a, b) => b.popularity - a.popularity);
-
-        // Deduplicate the sorted items based on media_type and id
-        return dedupeMedia(sortedItems);
+        if (!moviesData || !tvData) return [];
+        return mergeByPopularity(moviesData.results, tvData.results);
     }, [moviesData, tvData]);
-
-    const totalCount = (movieCount || 0) + (tvCount || 0);
 
     return {
         moviesData,
         tvData,
         moviesLoading,
         tvLoading,
-        movieCount: movieCount || 0,
-        tvCount: tvCount || 0,
+        movieCount,
+        tvCount,
         combinedMedia,
-        totalCount
+        totalCount: movieCount + tvCount,
     };
 };

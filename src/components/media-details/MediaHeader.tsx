@@ -18,12 +18,10 @@ interface MediaHeaderProps {
     creators: SeriesDetails['created_by'];
 }
 
-// Type guard to check if media is MovieDetails
 const isMovieDetails = (media: MediaDetails): media is MovieDetails => {
     return media.media_type === 'movie';
 };
 
-// Type guard to check if media is SeriesDetails
 const isSeriesDetails = (media: MediaDetails): media is SeriesDetails => {
     return media.media_type === 'tv';
 };
@@ -57,7 +55,6 @@ export const MediaHeader: React.FC<MediaHeaderProps> = ({ media, director, creat
                 px: { xs: 2, sm: 3 }
             }}>
                 <Stack spacing={2} sx={{ pb: 4 }}>
-                    {/* Title and Wishlist Button Row */}
                     <Stack
                         direction="row"
                         spacing={0}
@@ -99,7 +96,6 @@ export const MediaHeader: React.FC<MediaHeaderProps> = ({ media, director, creat
                         </Typography>
                     </Stack>
 
-                    {/* Media Metadata Row */}
                     <Stack
                         direction="row"
                         spacing={2}

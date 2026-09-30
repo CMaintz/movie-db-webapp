@@ -1,14 +1,12 @@
-/**
- * Main application component that sets up the application structure and routing
- * Provides global providers for theme, notifications, query cache, and authentication
- */
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -18,39 +16,16 @@ import WishlistPage from './pages/WishlistPage';
 import MediaDetailsPage from './pages/MediaDetailsPage';
 import theme from './theme';
 
-/**
- * Create a Query Client instance with caching configurations
- * - staleTime: How long data is considered fresh (5 minutes)
- * - gcTime: How long unused data is kept in cache (30 minutes)
- */
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            gcTime: 1000 * 60 * 30, // 30 minutes
+            staleTime: 1000 * 60 * 5,
+            gcTime: 1000 * 60 * 30,
         },
     },
 });
 
-/**
- * Protected Route component that redirects to login if user is not authenticated
- * Used to guard routes that require authentication
- */
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { user } = useAuth();
-
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return <>{children}</>;
-};
-
-/**
- * AppContent component that contains all application routes
- * Handles routing logic and authentication state for protected routes
- */
-const AppContent: React.FC = () => {
+const AppRoutes: React.FC = () => {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -62,14 +37,8 @@ const AppContent: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/genre/:genreName" element={<GenrePage />} />
             <Route path="/:mediaType/:id" element={<MediaDetailsPage />} />
-            <Route
-                path="/login"
-                element={user ? <Navigate to="/" /> : <LoginPage />}
-            />
-            <Route
-                path="/register"
-                element={user ? <Navigate to="/" /> : <RegisterPage />}
-            />
+            <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
+            <Route path="/register" element={user ? <Navigate to="/" /> : <RegisterPage />} />
             <Route
                 path="/profile"
                 element={
@@ -90,10 +59,6 @@ const AppContent: React.FC = () => {
     );
 };
 
-/**
- * Main App component that sets up provider context for the entire application
- * Provides global styling, theme, notifications, data fetching, and auth state
- */
 function App() {
     return (
         <ThemeProvider theme={theme}>
@@ -120,7 +85,7 @@ function App() {
                                     pt: { xs: 7, sm: 8 },
                                     overflowX: 'hidden'
                                 }}>
-                                    <AppContent />
+                                    <AppRoutes />
                                 </Box>
                             </Box>
                         </Router>

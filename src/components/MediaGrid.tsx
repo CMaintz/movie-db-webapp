@@ -5,8 +5,6 @@ import { Media } from '../types';
 import MediaCard from './MediaCard';
 import { ArrowForward } from '@mui/icons-material';
 
-
-
 interface MediaGridProps {
     media: Media[];
     title: string;
@@ -18,7 +16,6 @@ interface MediaGridProps {
     onLoadMore?: () => void;
     totalCount?: number;
     showCount?: boolean;
-    onMediaChange?: () => void;
 }
 
 const MediaGrid: React.FC<MediaGridProps> = ({
@@ -32,7 +29,6 @@ const MediaGrid: React.FC<MediaGridProps> = ({
     onLoadMore,
     totalCount,
     showCount = false,
-    onMediaChange,
 }) => {
     const navigate = useNavigate();
     const theme = useTheme();
@@ -42,13 +38,6 @@ const MediaGrid: React.FC<MediaGridProps> = ({
             onViewAll();
         } else if (viewAllPath) {
             navigate(viewAllPath);
-        }
-    };
-
-    // Handle wishlist changes at the grid level
-    const handleWishlistChange = (mediaId: number, mediaType: 'movie' | 'tv', isWishlisted: boolean) => {
-        if (onMediaChange) {
-            onMediaChange();
         }
     };
 
@@ -119,10 +108,10 @@ const MediaGrid: React.FC<MediaGridProps> = ({
             >
                 {media.map((item) => (
                     <Grid
-                        key={item.id}
+                        key={`${item.media_type}-${item.id}`}
                         size={{ xs: 2, sm: 4, md: 3, lg: 2, xl: 2 }}
                     >
-                        <MediaCard media={item} showType={showType} onWishlistChange={handleWishlistChange}/>
+                        <MediaCard media={item} showType={showType} />
                     </Grid>
                 ))}
             </Grid>

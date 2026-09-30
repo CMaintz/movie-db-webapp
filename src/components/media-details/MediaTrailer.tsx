@@ -18,12 +18,10 @@ interface MediaTrailerProps {
 }
 
 export const MediaTrailer: React.FC<MediaTrailerProps> = ({ videos }) => {
-    // Find the first YouTube trailer in the videos array
     const trailer = videos.find(
         (video) => video.site === 'YouTube' && video.type === 'Trailer'
     );
 
-    // Don't render anything if no trailer is found
     if (!trailer) return null;
 
     return (

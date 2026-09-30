@@ -11,14 +11,12 @@ import {
     Avatar,
     Stack,
     Divider,
-    useTheme,
-    useMediaQuery,
 } from '@mui/material';
 import { Person, Edit, Logout } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 const ProfilePage: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, updateDisplayName } = useAuth();
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -32,9 +30,9 @@ const ProfilePage: React.FC = () => {
         setLoading(true);
 
         try {
-            // TODO: Implement profile update functionality
+            await updateDisplayName(displayName.trim());
             setSuccess('Profile updated successfully');
-        } catch (err) {
+        } catch {
             setError('Failed to update profile. Please try again.');
         } finally {
             setLoading(false);
@@ -45,7 +43,7 @@ const ProfilePage: React.FC = () => {
         try {
             await logout();
             navigate('/');
-        } catch (err) {
+        } catch {
             setError('Failed to log out. Please try again.');
         }
     };
@@ -219,7 +217,7 @@ const ProfilePage: React.FC = () => {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            disabled={loading}
+                            disabled={loading || !displayName.trim() || displayName.trim() === (user.displayName ?? '')}
                             startIcon={<Edit />}
                             sx={{
                                 mt: 2,

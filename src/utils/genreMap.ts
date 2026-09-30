@@ -4,6 +4,7 @@ export interface GenreMapping {
     tvId: number;
 }
 
+// TMDB keeps separate genre lists for movies and TV; Thriller and War map to the nearest TV genres (Mystery, War & Politics)
 export const GENRES: GenreMapping[] = [
     { name: 'Action', movieId: 28, tvId: 10759 },
     { name: 'Comedy', movieId: 35, tvId: 35 },
@@ -16,30 +17,5 @@ export const GENRES: GenreMapping[] = [
     { name: 'Horror', movieId: 27, tvId: 27 },
 ];
 
-/**
- * Get the movie genre id for a given genre name
- */
-export const getMovieGenreId = (genreName: string): number | undefined => {
-    return GENRES.find(genre => genre.name === genreName)?.movieId;
-};
-
-/**
- * Get the TV show genre id for a given genre name
- */
-export const getTVGenreId = (genreName: string): number | undefined => {
-    return GENRES.find(genre => genre.name === genreName)?.tvId;
-};
-
-/**
- * Get the genre mapping object for a given genre name
- */
-export const getGenreMapping = (genreName: string): GenreMapping | undefined => {
-    return GENRES.find(genre => genre.name === genreName);
-};
-
-/**
- * Get the genre name for a given movie id and tv id
- */
-export const getGenreName = (movieId: number, tvId: number): string | undefined => {
-    return GENRES.find(genre => genre.movieId === movieId && genre.tvId === tvId)?.name;
-}; 
+export const getGenreMapping = (genreName: string): GenreMapping | undefined =>
+    GENRES.find((genre) => genre.name === genreName);

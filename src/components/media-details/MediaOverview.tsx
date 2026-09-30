@@ -14,12 +14,10 @@ interface MediaOverviewProps {
     creators: SeriesDetails['created_by'];
 }
 
-// Type guard to check if media is MovieDetails
 const isMovieDetails = (media: MediaDetails): media is MovieDetails => {
     return media.media_type === 'movie';
 };
 
-// Type guard to check if media is SeriesDetails
 const isSeriesDetails = (media: MediaDetails): media is SeriesDetails => {
     return media.media_type === 'tv';
 };
@@ -34,7 +32,6 @@ export const MediaOverview: React.FC<MediaOverviewProps> = ({ media, director, c
             borderRadius: 2,
         }}>
             <Grid container spacing={3}>
-                {/* Poster Image */}
                 <Grid size={{xs:12, sm: 4, md: 3}}>
                     {media.poster_path ? (
                         <Box
@@ -63,7 +60,6 @@ export const MediaOverview: React.FC<MediaOverviewProps> = ({ media, director, c
                     )}
                 </Grid>
 
-                {/* Overview Text */}
                 <Grid size={{xs:12, sm: 8, md: 9}}>
                     <Typography variant="h5" gutterBottom>
                         Overview
@@ -72,7 +68,6 @@ export const MediaOverview: React.FC<MediaOverviewProps> = ({ media, director, c
                         {media.overview}
                     </Typography>
 
-                    {/* Movie Details */}
                     {isMovieDetails(media) && director && (
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
@@ -109,7 +104,6 @@ export const MediaOverview: React.FC<MediaOverviewProps> = ({ media, director, c
                         </Box>
                     )}
 
-                    {/* TV Show Details */}
                     {isSeriesDetails(media) && (
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
@@ -121,7 +115,6 @@ export const MediaOverview: React.FC<MediaOverviewProps> = ({ media, director, c
                         </Box>
                     )}
 
-                    {/* Creators Section */}
                     {isSeriesDetails(media) && creators.length > 0 && (
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
