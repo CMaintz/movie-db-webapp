@@ -1,61 +1,68 @@
-# MDB — Movie & TV Browser (Web + LG webOS TV)
+# movie-db-webapp
 
-A movie and TV show browser that runs both as a standard web app **and** as a native LG webOS TV app with full remote-control (D-pad) navigation. Browse trending titles, dive into details with trailers and ratings from multiple sources, see exactly which streaming services carry each title in your country, and launch straight into the streaming app on your TV via deep links.
+A movie and TV browser that runs in the browser and as a sideloaded app on my LG webOS TV, where you drive it with the remote's D-pad. It pulls everything from TMDB, adds IMDb and Rotten Tomatoes scores via OMDb, shows which streaming services carry a title in your country, and on the TV it can launch straight into the right streaming app.
 
-## Features
+Live (web build): https://cmaintz.github.io/movie-db-webapp/
 
-- **Browse & discover** — trending movies and TV shows, genre pages, and detailed media pages with cast, trailers, and similar titles
-- **Multi-source ratings** — TMDB scores plus IMDb and Rotten Tomatoes ratings via OMDb
-- **Streaming availability** — automatically detects your country (IP geolocation, with manual override) and shows which streaming services carry each title there
-- **Deep links** — per-title deep links into streaming services; on webOS these launch the target app directly with Luna launch parameters
-- **Roulette** — can't decide? Spin for a random title, filtered by genre, year, minimum score (TMDB/IMDb/RT), and your subscribed streaming services — sourced from all of TMDB or your own wishlist
-- **Accounts** — Firebase email/password auth with wishlist, watched list, and settings synced through Firestore (optimistic updates)
-- **TV-first UX** — spatial navigation for D-pad remotes, media key handling, auto-scroll on focus, safe-area padding, and 1080p rendering that webOS upscales to 4K
+The Pages deploy only has real data once the API keys are set as repo secrets, so if the page is empty that's why.
 
-## Tech Stack
+![Roulette page](docs/roulette.png)
 
-- **React 19** + **TypeScript**, **Vite**, **Tailwind CSS**
-- **TanStack React Query** for server state
-- **React Router 7** (`HashRouter` — required for webOS sideloading)
-- **Firebase Auth + Firestore**
-- **@noriginmedia/norigin-spatial-navigation** for TV D-pad focus management
-- **APIs:** TMDB (v3 + v4), OMDb, Streaming Availability (movieofthenight), ip-api.com
-- **webOS:** ares-cli packaging, `webOSTV.js`, Luna service launch params
+## What it does
 
-## Getting Started
+- Trending, genre pages and detail pages with cast, trailers and similar titles
+- Ratings from TMDB, IMDb and Rotten Tomatoes (OMDb, cached in Firestore for 30 days so the free tier lasts)
+- Streaming availability per country. Region comes from your saved setting, then config, then IP lookup, then `US`
+- Deep links into streaming services. On webOS they launch the target app with Luna launch params
+- Roulette: can't decide, spin for a random title filtered by genre, year, minimum score and the services you pay for, from all of TMDB or just your wishlist. [MovieWheel](https://github.com/CMaintz/movie-wheel) started as a spin-off of this feature
+- Firebase email/password login with wishlist, watched list and settings in Firestore
+- TV mode: spatial navigation for the remote, media keys, safe-area padding, 1080p layout that the TV upscales
+
+## Stack
+
+React 19, TypeScript, Vite, Tailwind, TanStack Query, React Router 7 (`HashRouter`, because webOS loads the app from a file path), Firebase Auth + Firestore, norigin-spatial-navigation for the D-pad. APIs: TMDB v3/v4, OMDb, Streaming Availability (movieofthenight), ip-api.com.
+
+## Running it
+
+Needs Node 22 (pinned in `mise.toml`).
 
 ```bash
 npm install
-cp .env.example .env   # fill in keys (see below)
+cp .env.example .env   # TMDB + Firebase are required, the rest is optional
 npm run dev
 ```
 
-Required environment variables (all `VITE_`-prefixed):
-
-| Variable | Purpose |
-|---|---|
-| `VITE_TMDB_API_KEY` / `VITE_TMDB_READ_TOKEN` | TMDB media data + watch providers |
-| `VITE_FIREBASE_*` | Firebase Auth + Firestore |
-| `VITE_OMDB_API_KEY` | IMDb / Rotten Tomatoes scores (optional) |
-| `VITE_STREAMING_API_KEY` | Per-title deep links (optional) |
-| `VITE_WATCH_REGION` | Country override, e.g. `DK` (optional — auto-detected) |
-
-### TV build (LG webOS)
-
-Requires [ares-cli](https://webostv.developer.lge.com/develop/tools/cli-introduction) and a TV in developer mode:
+For the TV, copy `public/appconfig.example.js` to `public/appconfig.js` and put the keys there instead. It loads before the bundle, so keys can be changed on the TV without rebuilding. Then, with [ares-cli](https://webostv.developer.lge.com/develop/tools/cli-introduction) and the TV in developer mode:
 
 ```bash
-npm run build:tv     # production build + webOS manifest/icons
-npm run package:tv   # package into .ipk
-npm run install:tv   # sideload to connected TV
-npm run launch:tv    # launch on TV
+npm run build:tv     # build + webOS manifest and icons
+npm run install:tv   # package the .ipk and sideload it
+npm run launch:tv
 npm run inspect:tv   # remote DevTools
 ```
 
-## Architecture Notes
+`firestore.rules` keeps each user's wishlist, watched list and settings readable and writable only by that user. Deploy with `firebase deploy --only firestore:rules`.
 
-- **Region resolution** priority: Firestore user setting → build/runtime config → IP detection → `US` fallback
-- **Watch providers**: TMDB `/watch/providers` filtered to the resolved region; discover queries can filter by `watch_region` + `with_watch_providers`
-- **webOS deep links**: `src/utils/webosProviders.ts` maps TMDB provider IDs to webOS app IDs and builds `contentTarget` launch params from deep-link URLs; a dev test bench lives at `/#/dev/deeplink-test`
-- **Firestore layout**: `users/{uid}/wishlist`, `users/{uid}/watched`, `users/{uid}/meta/settings`
-- **Type hierarchy**: `MediaBase → Media → MediaDetails → MovieDetails | SeriesDetails`, with TMDB's `name`/`title` inconsistency normalized at the API layer
+## Tests and CI
+
+```bash
+mise run gate   # lint, typecheck, vitest with coverage floor, npm audit
+npm test        # just the tests
+```
+
+50 Vitest tests across 5 files, covering the pure bits: genre mapping, release-date handling, cast/crew shaping, platform detection and the provider/deep-link mapping for streaming services. PRs run the Foundry gate (the same `mise run gate`, plus structural smell checks, gitleaks, semgrep and a guard against loosening lint rules in the same PR as code changes). Pushes to `master` build the web version and deploy it to Pages.
+
+## Limitations
+
+- Coverage is low, around 4% of lines. The thresholds in `vite.config.ts` are a floor that only goes up, but the components and hooks are mostly untested
+- The web build gets its keys baked in at build time, so the TMDB/OMDb keys are visible in the bundle. Fine for free-tier keys, not for anything that costs money
+- Deep links are most useful on webOS. In the browser they just open the title on the service's site in a new tab, or TMDB's where-to-watch page if there's no link
+- On the Pages build, `appconfig.js` doesn't exist, so that request 404s and the app falls back to the baked-in keys. Harmless, just noise in the console
+
+## History
+
+This repo used to hold my first version of the app, built with MUI. I rewrote it with Tailwind and the webOS target in a separate private repo and moved that back here. The old commits are still in the history.
+
+## License
+
+MIT
