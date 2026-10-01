@@ -4,9 +4,14 @@ A movie and TV browser that runs in the browser and as a sideloaded app on my LG
 
 Live (web build): https://cmaintz.github.io/movie-db-webapp/
 
-The Pages deploy only has real data once the API keys are set as repo secrets, so if the page is empty that's why.
+The live build doesn't have OMDb or streaming-availability keys, so IMDb/RT scores and per-title deep links only show up locally with those keys set.
 
-![Roulette page](docs/roulette.png)
+![Home page](docs/home.png)
+
+<p>
+  <img src="docs/details.png" width="49%" alt="Details page">
+  <img src="docs/roulette.png" width="49%" alt="Roulette page">
+</p>
 
 ## What it does
 
