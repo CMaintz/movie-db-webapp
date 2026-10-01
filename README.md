@@ -1,131 +1,68 @@
 # movie-db-webapp
 
-[![CI](https://github.com/CMaintz/movie-db-webapp/actions/workflows/ci.yml/badge.svg)](https://github.com/CMaintz/movie-db-webapp/actions/workflows/ci.yml)
+A movie and TV browser that runs in the browser and as a sideloaded app on my LG webOS TV, where you drive it with the remote's D-pad. It pulls everything from TMDB, adds IMDb and Rotten Tomatoes scores via OMDb, shows which streaming services carry a title in your country, and on the TV it can launch straight into the right streaming app.
 
-My TMDB browser: a single-page app for browsing movies and TV shows from [TMDB](https://www.themoviedb.org/), with Firebase sign-in and a personal wishlist in Firestore. Basically a place to park "we should watch that sometime" before it's forgotten.
+Live (web build): https://cmaintz.github.io/movie-db-webapp/
 
-It also spawned [MovieWheel](https://github.com/CMaintz/movie-wheel), which deals with the other half of the problem: actually picking something tonight. (There was a webOS TV version of this app at some point too; it isn't in this repo.)
+The Pages deploy only has real data once the API keys are set as repo secrets, so if the page is empty that's why.
 
-Live demo: https://cmaintz.github.io/movie-db-webapp/
+![Roulette page](docs/roulette.png)
 
-![Home page with genre rows of movies and TV shows](docs/screenshot.png)
+## What it does
 
-## What you can do
+- Trending, genre pages and detail pages with cast, trailers and similar titles
+- Ratings from TMDB, IMDb and Rotten Tomatoes (OMDb, cached in Firestore for 30 days so the free tier lasts)
+- Streaming availability per country. Region comes from your saved setting, then config, then IP lookup, then `US`
+- Deep links into streaming services. On webOS they launch the target app with Luna launch params
+- Roulette: can't decide, spin for a random title filtered by genre, year, minimum score and the services you pay for, from all of TMDB or just your wishlist. [MovieWheel](https://github.com/CMaintz/movie-wheel) started as a spin-off of this feature
+- Firebase email/password login with wishlist, watched list and settings in Firestore
+- TV mode: spatial navigation for the remote, media keys, safe-area padding, 1080p layout that the TV upscales
 
-- Genre browsing: the home page shows nine fixed genres. Each row merges movies and TV shows, sorted by popularity, and has "Load more".
-- Genre pages (`/genre/:genreName`): All / Movies / TV tabs, with pagination capped at TMDB's 500-page limit.
-- Details pages (`/movie/:id`, `/tv/:id`): overview, rating, director or creators, a cast carousel, the YouTube trailer, and seasons for TV.
-- Accounts: email/password sign-up and login through Firebase Authentication, plus an editable display name.
-- Wishlist: signed-in users can save titles from any card or details page. Items are stored per user in Firestore and shown on `/wishlist`.
-- Layout: dark theme, with a bottom navigation bar on small screens.
+## Stack
 
-## Tech stack
+React 19, TypeScript, Vite, Tailwind, TanStack Query, React Router 7 (`HashRouter`, because webOS loads the app from a file path), Firebase Auth + Firestore, norigin-spatial-navigation for the D-pad. APIs: TMDB v3/v4, OMDb, Streaming Availability (movieofthenight), ip-api.com.
 
-React 19, TypeScript, Material UI 7, TanStack Query 5, React Router 7, Axios, Firebase (Auth + Firestore), Vite 6, Vitest and Testing Library.
+## Running it
 
-## Architecture
-
-```
-Browser ──► TMDB REST API          (movie/TV data, read-only)
-   │
-   ├──► Firebase Auth              (email/password sessions)
-   └──► Cloud Firestore            users/{uid}/wishlist/{doc}
-```
-
-There is no backend. Everything runs in the browser and is served as static files from GitHub Pages.
-
-| Layer | Location | Responsibility |
-| --- | --- | --- |
-| TMDB client | `src/services/apiService.ts` | Axios instance plus React Query hooks. Normalises TMDB's movie/TV field differences (`title`/`name`, `release_date`/`first_air_date`) into one `Media` shape and clamps pagination to TMDB's limits. |
-| Wishlist store | `src/services/wishlistService.ts` | Firestore reads and writes under `users/{uid}/wishlist`. |
-| Wishlist state | `src/hooks/useWishlist.ts` | One shared React Query cache per user. Add and remove are optimistic mutations that roll back if Firestore rejects them, so every wishlist button updates together. |
-| Genre data | `src/hooks/useGenreMedia.ts` | Fetches a genre's movies and TV shows in parallel, then merges and de-duplicates them. |
-| Auth | `src/context/` | Firebase auth state exposed through `useAuth()`. `ProtectedRoute` redirects signed-out users to `/login`. |
-| Security rules | `firestore.rules` | A user can only read, create or delete their own wishlist documents, and created documents are schema-checked. |
-
-```
-src/
-├── components/        # Cards, grid, navbar, pagination, wishlist button, ProtectedRoute
-│   └── media-details/ # Sections of the details page
-├── context/           # AuthProvider and useAuth
-├── hooks/             # useWishlist, useGenreMedia
-├── pages/             # Route components
-├── services/          # TMDB, Firebase and Firestore access
-├── test/              # Test setup, render helpers, in-memory Firestore fake
-├── utils/             # Genre mapping, date/runtime formatting
-├── types.ts
-└── theme.ts
-```
-
-## Scope and limitations
-
-- Client-only, so the TMDB key is public. The key is compiled into the JavaScript bundle and anyone can read it. Hiding it would need a small proxy (for example a serverless function); that is out of scope here. The Firebase web config is public by design, and access is enforced by `firestore.rules`.
-- Fixed genres. The nine genres are hard-coded in `src/utils/genreMap.ts`. TMDB keeps separate genre lists for movies and TV. Thriller and War map to the nearest TV genres (Mystery, War & Politics). Romance and Horror have no TV equivalent, so those rows are effectively movie-only.
-- English-language results only. Queries filter on `with_original_language=en`.
-- Not included: search, password reset, social login, and wishlist sorting or notes.
-- Tests: they cover the services, hooks, formatting utilities, route guard, auth provider and several components and pages (roughly half of all lines). Home, Login, Register, Navbar and the details page are not tested yet. On the list.
-
-## Getting started
-
-Prerequisites: Node 22 (see `.nvmrc`), a [TMDB API key](https://www.themoviedb.org/settings/api), and a Firebase project with Email/Password auth and Firestore enabled.
+Needs Node 22 (pinned in `mise.toml`).
 
 ```bash
-git clone https://github.com/CMaintz/movie-db-webapp.git
-cd movie-db-webapp
-npm ci
-cp .env.example .env.local   # then fill in the values
+npm install
+cp .env.example .env   # TMDB + Firebase are required, the rest is optional
 npm run dev
 ```
 
-`.env.local` needs:
+For the TV, copy `public/appconfig.example.js` to `public/appconfig.js` and put the keys there instead. It loads before the bundle, so keys can be changed on the TV without rebuilding. Then, with [ares-cli](https://webostv.developer.lge.com/develop/tools/cli-introduction) and the TV in developer mode:
 
-```
-VITE_TMDB_API_KEY=
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+```bash
+npm run build:tv     # build + webOS manifest and icons
+npm run install:tv   # package the .ipk and sideload it
+npm run launch:tv
+npm run inspect:tv   # remote DevTools
 ```
 
-## Scripts
+`firestore.rules` keeps each user's wishlist, watched list and settings readable and writable only by that user. Deploy with `firebase deploy --only firestore:rules`.
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Vite dev server |
-| `npm run typecheck` | `tsc -b` over the app, tests and config |
-| `npm run lint` | ESLint, with warnings treated as errors |
-| `npm test` | Vitest, run once |
-| `npm run test:coverage` | Vitest with a V8 coverage report; fails under the thresholds in `vitest.config.ts` |
-| `npm run build` | Production build into `dist/` |
+## Tests and CI
 
-## Testing
+```bash
+mise run gate   # lint, typecheck, vitest with coverage floor, npm audit
+npm test        # just the tests
+```
 
-Tests sit next to the code as `*.test.ts(x)` and run in jsdom. Firebase is never contacted:
+50 Vitest tests across 5 files, covering the pure bits: genre mapping, release-date handling, cast/crew shaping, platform detection and the provider/deep-link mapping for streaming services. PRs run the Foundry gate (the same `mise run gate`, plus structural smell checks, gitleaks, semgrep and a guard against loosening lint rules in the same PR as code changes). Pushes to `master` build the web version and deploy it to Pages.
 
-- `src/test/setup.ts` replaces the Firebase app module.
-- `src/test/fakeFirestore.ts` is an in-memory stand-in for the Firestore calls the app makes. `useWishlist` and `wishlistService` are tested end to end against it, including optimistic updates shared between components and failed writes.
-- TMDB calls are mocked at the Axios boundary.
+## Limitations
 
-## CI and deployment
+- Coverage is low, around 4% of lines. The thresholds in `vite.config.ts` are a floor that only goes up, but the components and hooks are mostly untested
+- The web build gets its keys baked in at build time, so the TMDB/OMDb keys are visible in the bundle. Fine for free-tier keys, not for anything that costs money
+- Deep links are most useful on webOS. In the browser they just open the title on the service's site in a new tab, or TMDB's where-to-watch page if there's no link
+- On the Pages build, `appconfig.js` doesn't exist, so that request 404s and the app falls back to the baked-in keys. Harmless, just noise in the console
 
-- CI (`.github/workflows/ci.yml`) runs on pushes to `master` and on pull requests: typecheck, lint, tests with coverage thresholds, then build.
-- Deploy (`.github/workflows/deploy.yml`) runs on push to `master`. It builds with the `VITE_*` values from repository secrets and publishes to GitHub Pages with `actions/deploy-pages`. It also writes `404.html` as a copy of `index.html` so deep links survive a refresh. Pages must be set to deploy from GitHub Actions.
-- Firestore rules are deployed separately:
+## History
 
-  ```bash
-  npx firebase-tools deploy --only firestore:rules --project <your-project-id>
-  ```
-
-  Or paste `firestore.rules` into Firebase console -> Firestore -> Rules.
-
-## Attribution
-
-![TMDB logo](https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg)
-
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+This repo used to hold my first version of the app, built with MUI. I rewrote it with Tailwind and the webOS target in a separate private repo and moved that back here. The old commits are still in the history.
 
 ## License
 
-[MIT](LICENSE)
+MIT

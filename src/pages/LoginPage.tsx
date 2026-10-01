@@ -1,203 +1,136 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import {
-    Box,
-    Container,
-    Typography,
-    TextField,
-    Button,
-    Link,
-    Alert,
-    Paper,
-    InputAdornment,
-    IconButton,
-} from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { useAuth } from '../context/useAuth';
+import { useNavigate, Link } from 'react-router-dom';
+import { useFocusable, FocusContext } from '@noriginmedia/norigin-spatial-navigation';
+import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const LoginPage: React.FC = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const navigate = useNavigate();
-    const { signIn } = useAuth();
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            await signIn(email, password);
-            navigate('/');
-        } catch {
-            setError('Failed to sign in. Please check your credentials.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Box
-            component="div"
-            sx={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: 'calc(100vh - 64px)'
-            }}
-        >
-            <Container
-                maxWidth="sm"
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    p: { xs: 2, sm: 4 }
-                }}
-            >
-                <Paper
-                    elevation={3}
-                    sx={{
-                        p: { xs: 3, sm: 4 },
-                        width: '100%',
-                        maxWidth: { xs: '90%', sm: '400px' },
-                        borderRadius: 2,
-                        background: 'rgba(30, 30, 30, 0.95)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        '& .MuiTextField-root': {
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                '& fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'primary.main',
-                                },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                            },
-                            '& .MuiInputBase-input': {
-                                color: 'white',
-                            },
-                        },
-                        '& .MuiButton-root': {
-                            backgroundColor: 'primary.main',
-                            '&:hover': {
-                                backgroundColor: 'primary.dark',
-                            },
-                        },
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Typography component="h1" variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-                            Welcome Back
-                        </Typography>
-                        {error && (
-                            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-                                {error}
-                            </Alert>
-                        )}
-                        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                autoComplete="email"
-                                autoFocus
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                sx={{ mb: 2 }}
-                            />
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type={showPassword ? 'text' : 'password'}
-                                id="password"
-                                autoComplete="current-password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                edge="end"
-                                                sx={{
-                                                    color: 'rgba(255, 255, 255, 0.7)',
-                                                    '&:hover': {
-                                                        color: 'white',
-                                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                                    },
-                                                }}
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                sx={{ mb: 3 }}
-                            />
-                            <Button
-                                type="submit"
-                                fullWidth
-                                variant="contained"
-                                size="large"
-                                sx={{
-                                    mt: 2,
-                                    mb: 3,
-                                    py: 1.5,
-                                    borderRadius: 1,
-                                    textTransform: 'none',
-                                    fontSize: '1.1rem',
-                                }}
-                                disabled={loading}
-                            >
-                                {loading ? 'Signing in...' : 'Sign In'}
-                            </Button>
-                            <Box sx={{ textAlign: 'center' }}>
-                                <Link
-                                    component={RouterLink}
-                                    to="/register"
-                                    variant="body1"
-                                    sx={{
-                                        textDecoration: 'none',
-                                        '&:hover': {
-                                            textDecoration: 'underline',
-                                        },
-                                    }}
-                                >
-                                    Don't have an account? Sign Up
-                                </Link>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Paper>
-            </Container>
-        </Box>
-    );
+const FocusableInput: React.FC<
+  React.InputHTMLAttributes<HTMLInputElement> & { label: string }
+> = ({ label, ...props }) => {
+  const { ref, focused } = useFocusable({
+    onEnterPress: () => {
+      // Focus the native input so webOS shows the on-screen keyboard
+      (ref as React.RefObject<HTMLInputElement>).current?.focus();
+    },
+  });
+  return (
+    <div>
+      <label className="text-white/70 text-sm mb-1 block">{label}</label>
+      <input
+        ref={ref as React.RefObject<HTMLInputElement>}
+        {...props}
+        className={`w-full bg-black/20 border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-white/30 ${
+          focused ? 'ring-2 ring-primary border-primary' : ''
+        } ${props.className || ''}`}
+      />
+    </div>
+  );
 };
 
-export default LoginPage; 
+const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
+
+  const { ref: formRef, focusKey } = useFocusable({
+    trackChildren: true,
+    saveLastFocusedChild: true,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      navigate('/');
+    } catch {
+      setError('Failed to sign in. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const { ref: submitRef, focused: submitFocused } = useFocusable({
+    onEnterPress: () => {
+      // Trigger form submit
+      const form = (submitRef as React.RefObject<HTMLButtonElement>).current?.closest('form');
+      form?.requestSubmit();
+    },
+  });
+
+  return (
+    <FocusContext.Provider value={focusKey}>
+      <div ref={formRef as React.RefObject<HTMLDivElement>} className="w-full min-h-[calc(100vh-7rem)] flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-bg-paper/95 backdrop-blur border border-white/10 rounded-2xl p-8">
+          <h1 className="text-white text-2xl font-bold text-center mb-6">Welcome Back</h1>
+
+          {error && (
+            <div className="bg-red-500/15 border border-red-500/40 text-red-400 text-sm rounded-lg px-4 py-3 mb-4">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <FocusableInput
+              label="Email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+
+            <div>
+              <label className="text-white/70 text-sm mb-1 block">Password</label>
+              <div className="relative">
+                <FocusableInput
+                  label=""
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              ref={submitRef as React.RefObject<HTMLButtonElement>}
+              type="submit"
+              disabled={loading}
+              className={`w-full bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg-paper disabled:opacity-50 mt-2 ${
+                submitFocused ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg-paper' : ''
+              }`}
+            >
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+
+          <p className="text-center text-white/50 text-sm mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-primary hover:underline">
+              Sign Up
+            </Link>
+          </p>
+        </div>
+      </div>
+    </FocusContext.Provider>
+  );
+};
+
+export default LoginPage;

@@ -3,11 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Movie DB Webapp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MDB — Movie & TV Browser</title>
+    <!-- Warm up connections to external APIs before JS loads -->
+    <link rel="preconnect" href="https://api.themoviedb.org" />
+    <link rel="preconnect" href="https://image.tmdb.org" />
+    <link rel="preconnect" href="https://www.omdbapi.com" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime API key config — edit public/appconfig.js before sideloading -->
+    <script src="/appconfig.js"></script>
+    <!-- webOS TV library — loaded conditionally, fails gracefully in browser -->
+    <script>
+      (function() {
+        try {
+          var s = document.createElement('script');
+          s.src = 'webOSTV.js';
+          s.onerror = function() { /* not on webOS, ignore */ };
+          document.head.appendChild(s);
+        } catch(e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

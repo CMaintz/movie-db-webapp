@@ -1,180 +1,116 @@
 import React from 'react';
-import {
-    Box,
-    Typography,
-    Stack,
-    Chip
-} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { ArrowLeft } from 'lucide-react';
 import MediaRating from '../MediaRating';
 import WishlistButton from '../WishlistButton';
-import { MovieDetails, SeriesDetails, Genre, MediaDetails } from '../../types';
+import WatchedButton from '../WatchedButton';
+import { MediaDetails, MovieDetails, Genre } from '../../types';
 import { getGenreMapping } from '../../utils/genreMap';
-import { formatMediaDateRange, formatMediaRuntime } from '../../utils/mediaFormatter.ts';
+import { formatMediaDateRange, formatMediaRuntime } from '../../utils/mediaDate';
+import { getCreators, getDirector } from './credits';
 
-interface MediaHeaderProps {
-    media: MediaDetails;
-    director: MediaDetails['credits']['crew'][0] | null;
-    creators: SeriesDetails['created_by'];
-}
-
-const isMovieDetails = (media: MediaDetails): media is MovieDetails => {
-    return media.media_type === 'movie';
+const FocusableGenreChip: React.FC<{ genre: Genre; onClick: () => void }> = ({ genre, onClick }) => {
+  const { ref, focused } = useFocusable({ onEnterPress: onClick });
+  return (
+    <button
+      ref={ref as React.RefObject<HTMLButtonElement>}
+      onClick={onClick}
+      className={`bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full transition-colors focus:outline-none ${
+        focused ? 'ring-2 ring-primary bg-white/30' : ''
+      }`}
+    >
+      {genre.name}
+    </button>
+  );
 };
 
-const isSeriesDetails = (media: MediaDetails): media is SeriesDetails => {
-    return media.media_type === 'tv';
+/**
+ * Backdrop, back button and the title block. The backdrop is fixed-positioned,
+ * so it paints behind the whole page regardless of where this sits in the DOM.
+ */
+const MediaHeader: React.FC<{ media: MediaDetails }> = ({ media }) => {
+  const navigate = useNavigate();
+  const { ref: backRef, focused: backFocused } = useFocusable({
+    onEnterPress: () => navigate(-1),
+  });
+
+  const movieMedia = media.media_type === 'movie' ? (media as MovieDetails) : null;
+  const director = getDirector(media);
+  const creators = getCreators(media);
+
+  const handleGenreClick = (genre: Genre) => {
+    if (getGenreMapping(genre.name)) {
+      navigate(`/genre/${genre.name}`, {
+        state: { genreName: genre.name, scrollPosition: window.scrollY },
+      });
+    }
+  };
+
+  return (
+    <>
+      {/* Fixed background */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0 pointer-events-none"
+        style={{
+          backgroundImage: media.backdrop_path
+            ? `url(https://image.tmdb.org/t/p/original${media.backdrop_path})`
+            : 'linear-gradient(45deg, #2E3B4E 0%, #1A1E2A 100%)',
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-black/50" />
+      </div>
+
+      {/* Back button */}
+      <button
+        ref={backRef as React.RefObject<HTMLButtonElement>}
+        onClick={() => navigate(-1)}
+        className={`fixed left-4 top-16 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/10 backdrop-blur focus:outline-none transition-colors ${
+          backFocused ? 'ring-2 ring-primary' : ''
+        }`}
+        aria-label="Go back"
+      >
+        <ArrowLeft className="w-5 h-5" />
+      </button>
+
+      {/* Hero area — push content below backdrop */}
+      <div className="relative z-10 mt-[calc(25vh+64px)] sm:mt-[calc(30vh+64px)] md:mt-[calc(35vh+72px)] w-full max-w-4xl mx-auto px-4 sm:px-6">
+        {/* Title row */}
+        <div className="flex items-start gap-3 mb-3">
+          <h1 className="text-white text-3xl sm:text-4xl font-bold flex-1 drop-shadow">
+            {media.title}
+          </h1>
+          <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+            <WishlistButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
+            <WatchedButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
+          </div>
+        </div>
+
+        {/* Meta row */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+          <MediaRating voteAverage={media.vote_average} size="medium" />
+          <span className="text-white/80 text-sm">
+            {movieMedia
+              ? [formatMediaDateRange(movieMedia), formatMediaRuntime(movieMedia)].filter(Boolean).join(' • ')
+              : formatMediaDateRange(media, true)}
+          </span>
+          {director && <span className="text-white/80 text-sm">• Dir: {director.name}</span>}
+          {creators.length > 0 && <span className="text-white/80 text-sm">• {creators[0].name}</span>}
+        </div>
+
+        {/* Genre chips */}
+        <div className="flex flex-wrap gap-2 pb-6">
+          {media.genres.map((genre: Genre) => (
+            <FocusableGenreChip
+              key={genre.id}
+              genre={genre}
+              onClick={() => handleGenreClick(genre)}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
 };
 
-export const MediaHeader: React.FC<MediaHeaderProps> = ({ media, director, creators }) => {
-    const navigate = useNavigate();
-
-    const handleGenreClick = (genre: Genre) => {
-        const mapping = getGenreMapping(genre.name);
-        if (mapping) {
-            navigate(`/genre/${genre.name}`);
-        }
-    };
-
-    return (
-        <Box
-            sx={{
-                position: 'relative',
-                height: { xs: '40vh', sm: '50vh', md: '60vh' },
-                width: '100%',
-                display: 'flex',
-                alignItems: 'flex-end',
-                zIndex: 1,
-                mt: { xs: 'calc(30vh + 64px)', sm: 'calc(35vh + 72px)', md: 'calc(40vh + 72px)' }
-            }}
-        >
-            <Box sx={{
-                width: '100%',
-                maxWidth: { xs: '100%', md: '80%', lg: '70%' },
-                mx: 'auto',
-                px: { xs: 2, sm: 3 }
-            }}>
-                <Stack spacing={2} sx={{ pb: 4 }}>
-                    <Stack
-                        direction="row"
-                        spacing={0}
-                        alignItems="center"
-                        sx={{
-                            width: '100%',
-                            flexWrap: 'wrap'
-                        }}
-                    >
-                        <Typography
-                            variant="h3"
-                            component="h1"
-                            sx={{
-                                color: 'white',
-                                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                                wordBreak: 'break-word',
-                                flex: 1,
-                                minWidth: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                            }}
-                        >
-                            {media.title}
-                            <WishlistButton
-                                mediaId={media.id}
-                                mediaType={media.media_type}
-                                sx={{
-                                    color: 'white',
-                                    flexShrink: 0,
-                                    p: 1.5,
-                                    ml: 0.5,
-                                    '& .MuiSvgIcon-root': {
-                                        fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
-                                    }
-                                }}
-                            />
-                        </Typography>
-                    </Stack>
-
-                    <Stack
-                        direction="row"
-                        spacing={2}
-                        alignItems="center"
-                        flexWrap="wrap"
-                        gap={1}
-                        sx={{ width: '100%' }}
-                    >
-                        <MediaRating
-                            voteAverage={media.vote_average}
-                            voteCount={media.vote_count}
-                            showVoteCount
-                            size="large"
-                        />
-                        <Typography
-                            variant="h6"
-                            sx={{
-                                color: 'white',
-                                textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-                                wordBreak: 'break-word'
-                            }}
-                        >
-                            {isMovieDetails(media)
-                                ? `${formatMediaDateRange(media)} • ${formatMediaRuntime(media)}`
-                                : formatMediaDateRange(media, true)
-                            }
-                        </Typography>
-
-                        {isMovieDetails(media) && director && (
-                            <Typography
-                                variant="h6"
-                                sx={{
-                                    color: 'white',
-                                    textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-                                    wordBreak: 'break-word'
-                                }}
-                            >
-                                Directed by {director.name}
-                            </Typography>
-                        )}
-
-                        {isSeriesDetails(media) && creators.length > 0 && (
-                            <Typography
-                                variant="h6"
-                                sx={{
-                                    color: 'white',
-                                    textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-                                    wordBreak: 'break-word'
-                                }}
-                            >
-                                Created by {creators.map(creator => creator.name).join(', ')}
-                            </Typography>
-                        )}
-                    </Stack>
-
-                    <Stack
-                        direction="row"
-                        spacing={1}
-                        flexWrap="wrap"
-                        gap={1}
-                        sx={{ width: '100%' }}
-                    >
-                        {media.genres.map((genre: Genre) => (
-                            <Chip
-                                key={genre.id}
-                                label={genre.name}
-                                size="medium"
-                                onClick={() => handleGenreClick(genre)}
-                                sx={{
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
-                                }}
-                            />
-                        ))}
-                    </Stack>
-                </Stack>
-            </Box>
-        </Box>
-    );
-};
+export default MediaHeader;

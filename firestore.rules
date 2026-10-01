@@ -2,22 +2,47 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each user can only see and change their own wishlist.
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Wishlist and watched list share a shape, only the timestamp field differs.
+    function isValidListItem(item, timeField) {
+      return item.keys().hasOnly(['mediaId', 'mediaType', timeField])
+        && item.keys().hasAll(['mediaId', 'mediaType', timeField])
+        && item.mediaId is int
+        && item.mediaType in ['movie', 'tv']
+        && item[timeField] is timestamp;
+    }
+
     match /users/{userId}/wishlist/{itemId} {
-      function isOwner() {
-        return request.auth != null && request.auth.uid == userId;
-      }
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidListItem(request.resource.data, 'addedAt');
+    }
 
-      function isValidItem(item) {
-        return item.keys().hasOnly(['mediaId', 'mediaType', 'addedAt'])
-          && item.keys().hasAll(['mediaId', 'mediaType', 'addedAt'])
-          && item.mediaId is int
-          && item.mediaType in ['movie', 'tv']
-          && item.addedAt is timestamp;
-      }
+    match /users/{userId}/watched/{itemId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidListItem(request.resource.data, 'watchedAt');
+    }
 
-      allow read, delete: if isOwner();
-      allow create: if isOwner() && isValidItem(request.resource.data);
+    match /users/{userId}/meta/settings {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['streamingServiceIds', 'watchRegion'])
+        && request.resource.data.streamingServiceIds is list
+        && request.resource.data.watchRegion is string;
+    }
+
+    // Shared OMDb ratings cache: anyone can read, signed-in users refresh it.
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.resource.data.keys().hasOnly(['imdbRating', 'imdbVotes', 'rottenTomatoes', 'metacritic', 'fetchedAt'])
+        && request.resource.data.fetchedAt is int;
     }
   }
 }

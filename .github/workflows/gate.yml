@@ -1,0 +1,29 @@
+# The gate, assembled from Foundry's reusable workflows instead of an inline copy.
+# See github.com/CMaintz/foundry.
+name: gate
+
+# PR-only: the habits job diffs against a local `main` it builds from the PR base,
+# and this repo's default branch is master, so a push run would have nothing to resolve.
+on:
+  pull_request:
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # lint / typecheck / test / audit (`mise run gate`, one verb per step) + structural smells
+  gate:
+    uses: CMaintz/foundry/.github/workflows/gate.yml@v2
+    with:
+      stack: ts
+
+  # secret scan + tightening-aware ruleset guard + semgrep
+  security:
+    uses: CMaintz/foundry/.github/workflows/security.yml@v2
+    permissions:
+      contents: read
+      pull-requests: read

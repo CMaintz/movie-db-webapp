@@ -1,57 +1,82 @@
 import { useMemo } from 'react';
-import { useMediaByGenre, useMediaCountByGenre } from '../services/apiService';
-import { Media, MediaResponse } from '../types';
+import { useMediaByGenre, useMediaCountByGenre, GenreSortBy } from '../services/api';
+import { Media } from '../types';
 
 interface UseGenreMediaProps {
-    movieId: number;
-    tvId: number;
-    page: number;
+  movieId: number;
+  tvId: number;
+  page: number;
+  shouldLoadAll?: boolean;
+  itemsPerPage?: number;
+  providerIds?: number[];
+  watchRegion?: string;
+  sortBy?: GenreSortBy;
 }
 
 interface UseGenreMediaResult {
-    moviesData: MediaResponse | undefined;
-    tvData: MediaResponse | undefined;
-    moviesLoading: boolean;
-    tvLoading: boolean;
-    movieCount: number;
-    tvCount: number;
-    combinedMedia: Media[];
-    totalCount: number;
+  moviesData: any;
+  tvData: any;
+  moviesLoading: boolean;
+  tvLoading: boolean;
+  movieCount: number;
+  tvCount: number;
+  combinedMedia: Media[];
+  totalCount: number;
 }
 
-// Movie and TV ids come from separate TMDB id spaces, so the key must include the type
-export const dedupeMedia = (media: Media[]): Media[] => {
-    const seen = new Set<string>();
-    return media.filter((item) => {
-        const key = `${item.media_type}-${item.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+export const useGenreMedia = ({
+  movieId,
+  tvId,
+  page,
+  shouldLoadAll = false,
+  itemsPerPage = 8,
+  providerIds,
+  watchRegion,
+  sortBy = 'popularity.desc',
+}: UseGenreMediaProps): UseGenreMediaResult => {
+  const { data: moviesData, isLoading: moviesLoading } = useMediaByGenre(
+    'movie', movieId, page, providerIds, watchRegion, sortBy
+  );
+  const { data: tvData, isLoading: tvLoading } = useMediaByGenre(
+    'tv', tvId, page, providerIds, watchRegion, sortBy
+  );
+  const { data: movieCount } = useMediaCountByGenre('movie', movieId, providerIds, watchRegion);
+  const { data: tvCount } = useMediaCountByGenre('tv', tvId, providerIds, watchRegion);
+
+  const combinedMedia = useMemo(() => {
+    if (!moviesData?.results || !tvData?.results) return [];
+
+    const newItems = [
+      ...(moviesData.results || []),
+      ...(tvData.results || []),
+    ].sort((a, b) => {
+      if (sortBy === 'vote_average.desc') return b.vote_average - a.vote_average;
+      if (sortBy === 'release_date.desc') {
+        return new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
+      }
+      if (sortBy === 'release_date.asc') {
+        return new Date(a.release_date || 0).getTime() - new Date(b.release_date || 0).getTime();
+      }
+      return b.popularity - a.popularity; // default: popularity.desc
     });
-};
 
-export const mergeByPopularity = (movies: Media[], shows: Media[]): Media[] =>
-    dedupeMedia([...movies, ...shows].sort((a, b) => b.popularity - a.popularity));
+    const unique = newItems.filter(
+      (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+    );
 
-export const useGenreMedia = ({ movieId, tvId, page }: UseGenreMediaProps): UseGenreMediaResult => {
-    const { data: moviesData, isLoading: moviesLoading } = useMediaByGenre('movie', movieId, page);
-    const { data: tvData, isLoading: tvLoading } = useMediaByGenre('tv', tvId, page);
-    const { data: movieCount = 0 } = useMediaCountByGenre('movie', movieId);
-    const { data: tvCount = 0 } = useMediaCountByGenre('tv', tvId);
+    return shouldLoadAll ? unique : unique.slice(0, itemsPerPage);
+  }, [moviesData, tvData, shouldLoadAll, itemsPerPage, sortBy]);
 
-    const combinedMedia = useMemo(() => {
-        if (!moviesData || !tvData) return [];
-        return mergeByPopularity(moviesData.results, tvData.results);
-    }, [moviesData, tvData]);
+  const totalCount = (movieCount || 0) + (tvCount || 0);
 
-    return {
-        moviesData,
-        tvData,
-        moviesLoading,
-        tvLoading,
-        movieCount,
-        tvCount,
-        combinedMedia,
-        totalCount: movieCount + tvCount,
-    };
+  return {
+    moviesData,
+    tvData,
+    moviesLoading,
+    tvLoading,
+    movieCount: movieCount || 0,
+    tvCount: tvCount || 0,
+    combinedMedia,
+    totalCount,
+  };
 };

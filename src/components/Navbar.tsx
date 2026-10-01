@@ -1,347 +1,266 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    AppBar,
-    Toolbar,
-    Typography,
-    Button,
-    Box,
-    IconButton,
-    Menu,
-    MenuItem,
-    useTheme,
-    useMediaQuery,
-    Drawer,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    BottomNavigation,
-    BottomNavigationAction,
-    Fab,
-} from '@mui/material';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import Home from '@mui/icons-material/Home';
-import Category from '@mui/icons-material/Category';
-import Favorite from '@mui/icons-material/Favorite';
-import MenuIcon from '@mui/icons-material/Menu';
-import Login from '@mui/icons-material/Login';
-import PersonAdd from '@mui/icons-material/PersonAdd';
-import Person from '@mui/icons-material/Person';
-import { useAuth } from '../context/useAuth';
-import React, { useState, useEffect } from 'react';
+  useFocusable,
+  FocusContext,
+} from '@noriginmedia/norigin-spatial-navigation';
+import {
+  Home,
+  LayoutGrid,
+  Heart,
+  CheckCircle,
+  Shuffle,
+  User,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [value, setValue] = useState(0);
+const NAV_ITEMS = [
+  { label: 'Home', icon: Home, path: '/' },
+  { label: 'Genres', icon: LayoutGrid, path: '/genre/Action' },
+  { label: 'Roulette', icon: Shuffle, path: '/roulette' },
+  { label: 'Wishlist', icon: Heart, path: '/wishlist' },
+  { label: 'Watched', icon: CheckCircle, path: '/watched' },
+];
 
-    useEffect(() => {
-        const path = location.pathname;
-        if (path === '/') {
-            setValue(0);
-        } else if (path.startsWith('/genre/')) {
-            setValue(1);
-        } else if (path === '/wishlist') {
-            setValue(2);
-        } else {
-            setValue(-1);
-        }
-    }, [location.pathname]);
-
-    const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            handleClose();
-            setMobileMenuOpen(false);
-        } catch (error) {
-            console.error('Failed to log out:', error);
-        }
-    };
-
-    const handleNavigation = (path: string) => {
-        navigate(path);
-        setMobileMenuOpen(false);
-    };
-
-    const mobileMenu = (
-        <Drawer
-            anchor="right"
-            open={mobileMenuOpen}
-            onClose={() => setMobileMenuOpen(false)}
-        >
-            <Box sx={{ width: 250 }}>
-                <List>
-                    {user && (
-                        <>
-                            <ListItem
-                                component="div"
-                                onClick={() => handleNavigation('/profile')}
-                                sx={{ cursor: 'pointer' }}
-                            >
-                                <ListItemIcon>
-                                    <Person />
-                                </ListItemIcon>
-                                <ListItemText primary="Profile" />
-                            </ListItem>
-                            <ListItem
-                                component="div"
-                                onClick={handleLogout}
-                                sx={{ cursor: 'pointer' }}
-                            >
-                                <ListItemIcon>
-                                    <AccountCircle />
-                                </ListItemIcon>
-                                <ListItemText primary="Logout" />
-                            </ListItem>
-                        </>
-                    )}
-                    {!user && (
-                        <>
-                            <ListItem
-                                component="div"
-                                onClick={() => handleNavigation('/login')}
-                                sx={{ cursor: 'pointer' }}
-                            >
-                                <ListItemIcon>
-                                    <Login />
-                                </ListItemIcon>
-                                <ListItemText primary="Login" />
-                            </ListItem>
-                            <ListItem
-                                component="div"
-                                onClick={() => handleNavigation('/register')}
-                                sx={{ cursor: 'pointer' }}
-                            >
-                                <ListItemIcon>
-                                    <PersonAdd />
-                                </ListItemIcon>
-                                <ListItemText primary="Register" />
-                            </ListItem>
-                        </>
-                    )}
-                </List>
-            </Box>
-        </Drawer>
-    );
-
-    if (isMobile) {
-        return (
-            <>
-                <Box sx={{ height: 56 }} />
-                <Fab
-                    size="small"
-                    color="primary"
-                    onClick={() => setMobileMenuOpen(true)}
-                    sx={{
-                        position: 'fixed',
-                        right: 16,
-                        top: 16,
-                        zIndex: 1200
-                    }}
-                >
-                    <MenuIcon />
-                </Fab>
-                <BottomNavigation
-                    value={value}
-                    onChange={(_event, newValue) => {
-                        setValue(newValue);
-                        switch(newValue) {
-                            case 0:
-                                handleNavigation('/');
-                                break;
-                            case 1:
-                                handleNavigation('/genre/Action')
-                                break;
-                            case 2:
-                                handleNavigation('/wishlist');
-                                break;
-                        }
-                    }}
-                    showLabels
-                    sx={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        backgroundColor: 'background.paper',
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
-                        zIndex: 1000,
-                        '& .MuiBottomNavigationAction-root': {
-                            color: 'text.secondary',
-                            '&.Mui-selected': {
-                                color: 'primary.main',
-                            },
-                        },
-                    }}
-                >
-                    <BottomNavigationAction
-                        label="Home"
-                        icon={<Home />}
-                        sx={{
-                            ...(location.pathname === '/' && {
-                                color: 'primary.main',
-                            }),
-                        }}
-                    />
-                    <BottomNavigationAction
-                        label="Genres"
-                        icon={<Category />}
-                        sx={{
-                            ...(location.pathname.startsWith('/genre/') && {
-                                color: 'primary.main',
-                            }),
-                        }}
-                    />
-                    <BottomNavigationAction
-                        label="Wishlist"
-                        icon={<Favorite />}
-                        sx={{
-                            ...(location.pathname === '/wishlist' && {
-                                color: 'primary.main',
-                            }),
-                        }}
-                    />
-                </BottomNavigation>
-                {mobileMenu}
-            </>
-        );
-    }
-
-    return (
-        <AppBar
-            position="fixed"
-            sx={{
-                width: '100%',
-                maxWidth: '100vw',
-                overflow: 'hidden'
-            }}
-        >
-            <Toolbar sx={{
-                width: '100%',
-                maxWidth: '100%'
-            }}>
-                <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{ flexGrow: 1, cursor: 'pointer' }}
-                    onClick={() => navigate('/')}
-                >
-                    Movie Explorer
-                </Typography>
-
-                <Box sx={{
-                    display: 'flex',
-                    gap: 2,
-                    mr: 2,
-                    overflow: 'hidden'
-                }}>
-                    <Button
-                        color="inherit"
-                        startIcon={<Home />}
-                        onClick={() => navigate('/')}
-                        sx={{
-                            ...(location.pathname === '/' && {
-                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                },
-                            }),
-                        }}
-                    >
-                        Home
-                    </Button>
-                    <Button
-                        color="inherit"
-                        startIcon={<Category />}
-                        onClick={() => navigate('/genre/Action')}
-                        sx={{
-                            ...(location.pathname.startsWith('/genre/') && {
-                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                },
-                            }),
-                        }}
-                    >
-                        Genres
-                    </Button>
-                    <Button
-                        color="inherit"
-                        startIcon={<Favorite />}
-                        onClick={() => navigate('/wishlist')}
-                        sx={{
-                            ...(location.pathname === '/wishlist' && {
-                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                },
-                            }),
-                        }}
-                    >
-                        Wishlist
-                    </Button>
-                </Box>
-
-                {user ? (
-                    <>
-                        <IconButton
-                            size="large"
-                            aria-label="account of current user"
-                            aria-controls="menu-appbar"
-                            aria-haspopup="true"
-                            onClick={handleMenu}
-                            color="inherit"
-                        >
-                            <AccountCircle />
-                        </IconButton>
-                        <Menu
-                            id="menu-appbar"
-                            anchorEl={anchorEl}
-                            anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'right',
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            open={Boolean(anchorEl)}
-                            onClose={handleClose}
-                        >
-                            <MenuItem onClick={() => { navigate('/profile'); handleClose(); }}>
-                                Profile
-                            </MenuItem>
-                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                        </Menu>
-                    </>
-                ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button color="inherit" onClick={() => navigate('/login')}>
-                            Login
-                        </Button>
-                        <Button color="inherit" onClick={() => navigate('/register')}>
-                            Register
-                        </Button>
-                    </Box>
-                )}
-            </Toolbar>
-        </AppBar>
-    );
+const NavBtn = ({
+  onClick,
+  icon: Icon,
+  label,
+  isActive,
+  className = '',
+}: {
+  onClick: () => void;
+  icon: React.FC<{ className?: string }>;
+  label: string;
+  isActive: boolean;
+  className?: string;
+}) => {
+  const { ref, focused } = useFocusable({ onEnterPress: onClick });
+  return (
+    <button
+      ref={ref as React.RefObject<HTMLButtonElement>}
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none ${
+        focused ? 'ring-2 ring-primary' : ''
+      } ${
+        isActive
+          ? 'text-primary bg-primary/10'
+          : 'text-white/80 hover:text-white hover:bg-white/10'
+      } ${className}`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
 };
 
-export default Navbar; 
+const Navbar = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const { ref: navRef, focusKey } = useFocusable({
+    focusKey: 'NAVBAR',
+    trackChildren: true,
+    isFocusBoundary: true,
+    focusBoundaryDirections: ['left', 'right'] as any,
+  });
+
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path.split('/')[1] ? `/${path.split('/')[1]}` : path);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch {}
+  };
+
+  return (
+    <>
+      {/* Desktop navbar */}
+      <FocusContext.Provider value={focusKey}>
+        <header
+          ref={navRef as React.RefObject<HTMLElement>}
+          className="fixed top-0 left-0 right-0 z-50 bg-bg-paper/95 backdrop-blur-sm border-b border-white/10 h-14 hidden md:flex items-center px-4 gap-2"
+        >
+          <NavBtn
+            onClick={() => navigate('/')}
+            icon={() => <span className="text-white font-bold text-lg tracking-wide">MovieDB</span>}
+            label=""
+            isActive={false}
+            className="mr-4"
+          />
+
+          <nav className="flex items-center gap-1 flex-1">
+            {NAV_ITEMS.map(({ label, icon, path }) => (
+              <NavBtn
+                key={label}
+                onClick={() => navigate(path)}
+                icon={icon}
+                label={label}
+                isActive={isActive(path)}
+              />
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <NavBtn
+                  onClick={() => navigate('/profile')}
+                  icon={User}
+                  label={user.displayName || user.email?.split('@')[0] || 'Profile'}
+                  isActive={false}
+                />
+                <NavBtn
+                  onClick={handleLogout}
+                  icon={LogOut}
+                  label="Logout"
+                  isActive={false}
+                  className="text-white/60"
+                />
+              </>
+            ) : (
+              <>
+                <NavBtn
+                  onClick={() => navigate('/login')}
+                  icon={LogIn}
+                  label="Login"
+                  isActive={false}
+                />
+                <NavBtn
+                  onClick={() => navigate('/register')}
+                  icon={UserPlus}
+                  label="Register"
+                  isActive={false}
+                  className="bg-primary text-white hover:bg-primary-dark"
+                />
+              </>
+            )}
+          </div>
+        </header>
+      </FocusContext.Provider>
+
+      {/* Mobile: top bar with hamburger */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-bg-paper/95 backdrop-blur-sm border-b border-white/10 h-14 flex md:hidden items-center px-4">
+        <button
+          onClick={() => navigate('/')}
+          className="text-white font-bold text-lg mr-auto focus:outline-none"
+        >
+          MovieDB
+        </button>
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="text-white p-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </header>
+
+      {/* Mobile drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-[60] flex">
+          <div className="flex-1 bg-black/60" onClick={() => setDrawerOpen(false)} />
+          <div className="w-64 bg-bg-paper h-full flex flex-col p-4 gap-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white font-bold text-lg">Menu</span>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="text-white/60 hover:text-white focus:outline-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {NAV_ITEMS.map(({ label, icon: Icon, path }) => (
+              <button
+                key={label}
+                onClick={() => navigate(path)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
+                  isActive(path)
+                    ? 'text-primary bg-primary/10'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {label}
+              </button>
+            ))}
+
+            <div className="mt-auto pt-4 border-t border-white/10 flex flex-col gap-2">
+              {user ? (
+                <>
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full text-left text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    <User className="w-5 h-5" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full text-left text-white/60 hover:text-white hover:bg-white/10"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full text-left text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Login
+                  </button>
+                  <button
+                    onClick={() => navigate('/register')}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full text-left bg-primary text-white hover:bg-primary-dark"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    Register
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-bg-paper/95 backdrop-blur-sm border-t border-white/10 flex">
+        {NAV_ITEMS.map(({ label, icon: Icon, path }) => (
+          <button
+            key={label}
+            onClick={() => navigate(path)}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[0.6rem] font-medium transition-colors focus:outline-none ${
+              isActive(path) ? 'text-primary' : 'text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Icon className="w-5 h-5" />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Bottom padding for mobile nav */}
+      <div className="h-14 md:hidden" />
+    </>
+  );
+};
+
+export default Navbar;

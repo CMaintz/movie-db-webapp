@@ -1,99 +1,136 @@
-import { useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../context/useAuth';
+// src/hooks/useWishlist.ts
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { wishlistService, WishlistItem } from '../services/wishlistService';
-import { MediaType } from '../types';
 
-interface WishlistChange {
-    mediaId: number;
-    mediaType: MediaType;
-}
 
-type WishlistKey = ReturnType<typeof wishlistQueryKey>;
-
-export const wishlistQueryKey = (userId: string | undefined) => ['wishlist', userId] as const;
-
-// Applies `update` to the cached list immediately and rolls back if Firestore rejects the write
-const useOptimisticWishlistMutation = (
-    queryKey: WishlistKey,
-    write: (change: WishlistChange) => Promise<unknown>,
-    update: (items: WishlistItem[], change: WishlistChange) => WishlistItem[]
-) => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: write,
-        onMutate: async (change: WishlistChange) => {
-            await queryClient.cancelQueries({ queryKey });
-            const previous = queryClient.getQueryData<WishlistItem[]>(queryKey);
-            queryClient.setQueryData<WishlistItem[]>(queryKey, (items = []) => update(items, change));
-            return { previous };
-        },
-        onError: (error, _change, context) => {
-            console.error('Wishlist update failed:', error);
-            queryClient.setQueryData(queryKey, context?.previous);
-        },
-        onSettled: () => queryClient.invalidateQueries({ queryKey }),
-    }).mutateAsync;
-};
-
+/**
+ * Custom React hook for managing a user's wishlist
+ * Provides functionality to fetch, add, remove, and check wishlist items
+ * @returns Object containing wishlist state and functions to manipulate it
+ */
 export const useWishlist = () => {
-    const { user } = useAuth();
-    const userId = user?.uid;
-    const queryKey = wishlistQueryKey(userId);
+  // Get the current authenticated user from auth context
+  const { user } = useAuth();
+  
+  // State for storing the wishlist items
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  
+  // State for tracking loading status during async operations
+  const [loading, setLoading] = useState(true);
+// To force a rerender when the wishlist changes
+  const [version, setVersion] = useState(0);
 
-    const { data: wishlist = [], isLoading } = useQuery({
-        queryKey,
-        queryFn: () => wishlistService.fetchWishlist(userId!),
-        enabled: !!userId,
-    });
+    // Increment version to trigger re-renders
+    const bumpVersion = useCallback(() => {
+      setVersion(v => v + 1);
+    }, []);
 
-    const add = useOptimisticWishlistMutation(
-        queryKey,
-        ({ mediaId, mediaType }) => wishlistService.addToWishlist(userId!, mediaId, mediaType),
-        (items, { mediaId, mediaType }) => [...items, { id: mediaId, media_type: mediaType, addedAt: new Date() }]
-    );
+  /**
+   * Fetches the current user's wishlist from Firestore
+   * Updates the wishlist state and loading state
+   * @returns void
+   */
+  const fetchWishlist = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const items = await wishlistService.fetchWishlist(user.uid);
+      setWishlist(items);
+      bumpVersion(); // Bump version on fetch
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, bumpVersion]);
 
-    const remove = useOptimisticWishlistMutation(
-        queryKey,
-        ({ mediaId, mediaType }) => wishlistService.removeFromWishlist(userId!, mediaId, mediaType),
-        (items, { mediaId, mediaType }) =>
-            items.filter((item) => !(item.id === mediaId && item.media_type === mediaType))
-    );
+  /**
+   * Effect hook to fetch the wishlist when the user changes
+   * If there's no user, clears the wishlist
+   */
+  useEffect(() => {
+    if (user) {
+      fetchWishlist();
+    } else {
+      setWishlist([]);
+      setLoading(false);
+    }
+  }, [user, fetchWishlist]);
 
-    const run = useCallback(
-        async (mutate: (change: WishlistChange) => Promise<unknown>, change: WishlistChange) => {
-            if (!userId) return false;
-            try {
-                await mutate(change);
-                return true;
-            } catch {
-                return false;
-            }
+  /**
+   * Adds an item to the current user's wishlist
+   * Updates both Firestore and local state
+   * @param mediaId - The ID of the media to add
+   * @param mediaType - The type of media ('movie' or 'tv')
+   * @returns Promise that completes when the operation is done
+   */
+  const addToWishlist = useCallback(async (mediaId: number, mediaType: 'movie' | 'tv') => {
+    if (!user) return Promise.resolve(false);
+    
+    try {
+      await wishlistService.addToWishlist(user.uid, mediaId, mediaType);
+      
+      // Update local state to reflect the change immediately
+      setWishlist(prev => [
+        ...prev,
+        {
+          id: mediaId,
+          media_type: mediaType,
+          addedAt: new Date(),
         },
-        [userId]
-    );
+      ]);
+      bumpVersion(); // Bump version after state change
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      return Promise.resolve(false);
+    }
+  }, [user, bumpVersion]);
 
-    const addToWishlist = useCallback(
-        (mediaId: number, mediaType: MediaType) => run(add, { mediaId, mediaType }),
-        [run, add]
-    );
 
-    const removeFromWishlist = useCallback(
-        (mediaId: number, mediaType: MediaType) => run(remove, { mediaId, mediaType }),
-        [run, remove]
-    );
+  /**
+   * Removes an item from the current user's wishlist
+   * Updates both Firestore and local state
+   * @param mediaId - The ID of the media to remove
+   * @param mediaType - The type of media ('movie' or 'tv')
+   * @returns Promise that completes when the operation is done
+   */
+  const removeFromWishlist = useCallback(async (mediaId: number, mediaType: 'movie' | 'tv') => {
+    if (!user) return Promise.resolve(false);
+    
+    try {
+      await wishlistService.removeFromWishlist(user.uid, mediaId, mediaType);
+      
+      // Update local state to reflect the change immediately
+      setWishlist(prev => prev.filter(item => !(item.id === mediaId && item.media_type === mediaType)));
+      bumpVersion(); // Bump version after state change
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      return Promise.resolve(false);
+    }
+  }, [user, bumpVersion]);
 
-    const isInWishlist = useCallback(
-        (mediaId: number, mediaType: MediaType) => wishlistService.isInWishlist(wishlist, mediaId, mediaType),
-        [wishlist]
-    );
+  /**
+   * Checks if a specific item is in the current user's wishlist
+   * @param mediaId - The ID of the media to check for
+   * @param mediaType - The type of media ('movie' or 'tv')
+   * @returns Boolean indicating whether the item is in the wishlist
+   */
+  const isInWishlist = useCallback((mediaId: number, mediaType: 'movie' | 'tv') => {
+    return wishlistService.isInWishlist(wishlist, mediaId, mediaType);
+  }, [wishlist]);
 
-    return {
-        wishlist,
-        loading: !!userId && isLoading,
-        addToWishlist,
-        removeFromWishlist,
-        isInWishlist,
-    };
+  // Return the wishlist state and functions to manipulate it
+  return {
+    wishlist,
+    loading,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    refreshWishlist: fetchWishlist,
+    wishlistVersion: version,
+  };
 };

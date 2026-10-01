@@ -1,0 +1,6 @@
+# Default gitleaks rules. A real leak gets rotated and purged, never allowlisted;
+# add an [allowlist] with exact paths only for confirmed false positives.
+title = "gitleaks config"
+
+[extend]
+useDefault = true

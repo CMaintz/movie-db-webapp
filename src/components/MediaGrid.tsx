@@ -1,134 +1,112 @@
 import React from 'react';
-import { Grid, Box, Typography, Button, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useFocusable, FocusContext } from '@noriginmedia/norigin-spatial-navigation';
+import { ArrowRight } from 'lucide-react';
 import { Media } from '../types';
 import MediaCard from './MediaCard';
-import ArrowForward from '@mui/icons-material/ArrowForward';
 
 interface MediaGridProps {
-    media: Media[];
-    title: string;
-    showType?: boolean;
-    showViewAll?: boolean;
-    viewAllPath?: string;
-    onViewAll?: () => void;
-    showLoadMore?: boolean;
-    onLoadMore?: () => void;
-    totalCount?: number;
-    showCount?: boolean;
+  media: Media[];
+  title?: string;
+  showType?: boolean;
+  showViewAll?: boolean;
+  viewAllPath?: string;
+  onViewAll?: () => void;
+  showLoadMore?: boolean;
+  onLoadMore?: () => void;
+  totalCount?: number;
+  showCount?: boolean;
+  onMediaChange?: () => void;
 }
 
 const MediaGrid: React.FC<MediaGridProps> = ({
-    media,
-    title,
-    showType = true,
-    showViewAll = true,
-    viewAllPath,
-    onViewAll,
-    showLoadMore = false,
-    onLoadMore,
-    totalCount,
-    showCount = false,
+  media,
+  title,
+  showType = true,
+  showViewAll = true,
+  viewAllPath,
+  onViewAll,
+  showLoadMore = false,
+  onLoadMore,
+  totalCount,
+  showCount = false,
+  onMediaChange,
 }) => {
-    const navigate = useNavigate();
-    const theme = useTheme();
+  const navigate = useNavigate();
 
-    const handleViewAll = () => {
-        if (onViewAll) {
-            onViewAll();
-        } else if (viewAllPath) {
-            navigate(viewAllPath);
-        }
-    };
+  const { ref, focusKey } = useFocusable({
+    trackChildren: true,
+    saveLastFocusedChild: true,
+  });
 
-    return (
-        <Box sx={{
-            width: '100%',
-            maxWidth: '100%',
-            mx: 'auto',
-            px: 'auto',
-            mb: 2,
-            boxSizing: 'border-box'
-        }}>
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                mb: 2,
-                width: '100%'
-            }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Typography variant="h5" component="h2">
-                        {title}
-                    </Typography>
-                    {showCount && totalCount !== undefined && (
-                        <Typography variant="body2" color="text.secondary">
-                            ({totalCount.toLocaleString()} titles)
-                        </Typography>
-                    )}
-                    {showViewAll && (viewAllPath || onViewAll) && (
-                        <Button
-                            onClick={handleViewAll}
-                            variant="outlined"
-                            color="primary"
-                            size="small"
-                            endIcon={<ArrowForward />}
-                            sx={{
-                                textTransform: 'none',
-                                minWidth: { xs: 'auto', sm: '100px' },
-                                px: { xs: 1, sm: 2 },
-                                py: 0.5,
-                                borderRadius: 2,
-                                transition: 'all 0.2s ease-in-out',
-                                '&:hover': {
-                                    backgroundColor: theme.palette.primary.main,
-                                    color: theme.palette.primary.contrastText,
-                                    transform: 'translateY(-1px)',
-                                    boxShadow: `0 2px 4px ${theme.palette.primary.main}40`,
-                                },
-                                '&:active': {
-                                    transform: 'translateY(1px)',
-                                    boxShadow: 'none',
-                                }
-                            }}
-                        >
-                            View All
-                        </Button>
-                    )}
-                </Box>
-            </Box>
-            <Grid
-                container
-                spacing={{ xs: '0.5rem', sm: '1rem', md: '1.5rem' }}
-                columns={{ xs: 4, sm: 8, md: 12, lg: 16, xl: 16 }}
-                sx={{
-                    width: '100%',
-                    margin: 0
-                }}
+  const handleViewAll = () => {
+    if (onViewAll) onViewAll();
+    else if (viewAllPath) navigate(viewAllPath);
+  };
+
+  const handleWishlistChange = (_mediaId: number, _mediaType: 'movie' | 'tv', _isWishlisted: boolean) => {
+    onMediaChange?.();
+  };
+
+  const { ref: viewAllRef, focused: viewAllFocused } = useFocusable({
+    onEnterPress: handleViewAll,
+  });
+
+  const { ref: loadMoreRef, focused: loadMoreFocused } = useFocusable({
+    onEnterPress: onLoadMore,
+  });
+
+  return (
+    <FocusContext.Provider value={focusKey}>
+      <div ref={ref as React.RefObject<HTMLDivElement>} className="w-full mb-4">
+        {/* Header row */}
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <h2 className="text-white text-xl font-semibold">{title}</h2>
+          {showCount && totalCount !== undefined && (
+            <span className="text-text-secondary text-sm">({totalCount.toLocaleString()} titles)</span>
+          )}
+          {showViewAll && (viewAllPath || onViewAll) && (
+            <button
+              ref={viewAllRef as React.RefObject<HTMLButtonElement>}
+              onClick={handleViewAll}
+              className={`flex items-center gap-1 text-primary text-sm border border-primary px-3 py-1 rounded-lg hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                viewAllFocused ? 'ring-2 ring-primary bg-primary text-white' : ''
+              }`}
             >
-                {media.map((item) => (
-                    <Grid
-                        key={`${item.media_type}-${item.id}`}
-                        size={{ xs: 2, sm: 4, md: 3, lg: 2, xl: 2 }}
-                    >
-                        <MediaCard media={item} showType={showType} />
-                    </Grid>
-                ))}
-            </Grid>
-            {showLoadMore && onLoadMore && media.length < (totalCount || 0) && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                    <Button
-                        onClick={onLoadMore}
-                        variant="outlined"
-                        color="primary"
-                        sx={{ textTransform: 'none' }}
-                    >
-                        Load More
-                    </Button>
-                </Box>
-            )}
-        </Box>
-    );
+              View All <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
+          {media.map((item) => (
+            <MediaCard
+              key={item.id}
+              media={item}
+              showType={showType}
+              onWishlistChange={handleWishlistChange}
+            />
+          ))}
+        </div>
+
+        {/* Load more */}
+        {showLoadMore && onLoadMore && media.length < (totalCount || 0) && (
+          <div className="flex justify-center mt-6">
+            <button
+              ref={loadMoreRef as React.RefObject<HTMLButtonElement>}
+              onClick={onLoadMore}
+              className={`text-primary border border-primary px-6 py-2 rounded-lg hover:bg-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+                loadMoreFocused ? 'ring-2 ring-primary bg-primary text-white' : ''
+              }`}
+            >
+              Load More
+            </button>
+          </div>
+        )}
+      </div>
+    </FocusContext.Provider>
+  );
 };
 
 export default MediaGrid;
