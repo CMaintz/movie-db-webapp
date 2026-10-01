@@ -50,7 +50,7 @@ mise run gate   # lint, typecheck, vitest with coverage floor, npm audit
 npm test        # just the tests
 ```
 
-50 Vitest tests across 5 files, covering the pure bits: genre mapping, release-date handling, cast/crew shaping, platform detection and the provider/deep-link mapping for streaming services. PRs run the Foundry gate (the same `mise run gate`, plus structural smell checks, gitleaks, semgrep and a guard against loosening lint rules in the same PR as code changes). Pushes to `master` build the web version and deploy it to Pages.
+50 Vitest tests across 5 files, covering the pure bits: genre mapping, release-date handling, cast/crew shaping, platform detection and the provider/deep-link mapping for streaming services. PRs run the Foundry gate (the same `mise run gate`, plus structural smell checks, gitleaks, semgrep and a guard against loosening lint rules in the same PR as code changes). Pushes to `main` build the web version and deploy it to Pages.
 
 ## Limitations
 

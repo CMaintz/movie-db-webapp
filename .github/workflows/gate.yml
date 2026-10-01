@@ -2,8 +2,7 @@
 # See github.com/CMaintz/foundry.
 name: gate
 
-# PR-only: the habits job diffs against a local `main` it builds from the PR base,
-# and this repo's default branch is master, so a push run would have nothing to resolve.
+# PR-only: it checks changes before they land on main.
 on:
   pull_request:
 
