@@ -1,108 +1,29 @@
-# Foundry gate — the CI placement of the same rule set that runs in-loop and
-# pre-push. CI is 100% deterministic on purpose: no model, no API key, no
-# secrets beyond the default token. See github.com/CMaintz/foundry DESIGN.md §2.
+# The gate, assembled from Foundry's reusable workflows instead of an inline copy.
+# See github.com/CMaintz/foundry.
 name: gate
 
+# PR-only: the habits job diffs against a local `main` it builds from the PR base,
+# and this repo's default branch is master, so a push run would have nothing to resolve.
 on:
   pull_request:
-  push:
-    branches: [main]
-
-# Least privilege. Nothing here writes to the repo.
-permissions:
-  contents: read
 
 concurrency:
   group: gate-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  # lint / typecheck / test / audit (`mise run gate`, one verb per step) + structural smells
   gate:
-    name: Deterministic gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
-        with:
-          # Pin mise itself, not just the action. Left unpinned the action asks
-          # mise.jdx.dev/VERSION for "latest", which can advertise a version
-          # whose GitHub release assets are not published yet (v2026.9.3 did
-          # exactly that and 404'd). Bump deliberately.
-          version: 2026.9.2
-      - run: npm ci
-      # The exact same verb a developer runs locally. If this and `mise run gate`
-      # on a laptop ever disagree, that is a bug in the setup, not in the code.
-      - run: mise run gate
+    uses: CMaintz/foundry/.github/workflows/gate.yml@v2
+    with:
+      stack: ts
 
-  habits:
-    name: Structural smells
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
-        with:
-          # Pin mise itself, not just the action. Left unpinned the action asks
-          # mise.jdx.dev/VERSION for "latest", which can advertise a version
-          # whose GitHub release assets are not published yet (v2026.9.3 did
-          # exactly that and 404'd). Bump deliberately.
-          version: 2026.9.2
-      - run: npm ci
-      # knip / ts-morph / jscpd come from node_modules; the sensors themselves
-      # are Python. .habit-hooks/snooze.json holds the accepted baseline.
-      - run: pip install --disable-pip-version-check habit-hooks habit-hooks-typescript
-      - run: habit-hooks
-
-  secrets:
-    name: Secret scan
-    runs-on: ubuntu-latest
-    # gitleaks-action lists the PR's commits, which the default contents:read
-    # token cannot do. Narrowest permission that makes it work.
+  # secret scan + tightening-aware ruleset guard + semgrep
+  security:
+    uses: CMaintz/foundry/.github/workflows/security.yml@v2
     permissions:
       contents: read
       pull-requests: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0 # gitleaks scans history, not just the tip
-      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  ruleset-guard:
-    name: Ruleset guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          fetch-depth: 0
-      # DESIGN.md §4.3 Rule 1: a fixer must never be able to weaken the gate in
-      # the same change that it "fixes". Loosening a threshold, disabling a rule
-      # or growing the suppression baseline is a deliberate act that gets its own
-      # PR — or, failing that, an explicit human label.
-      - name: Refuse ruleset changes bundled with source changes
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: |
-          set -euo pipefail
-          changed=$(git diff --name-only "$BASE" "$HEAD")
-          echo "Changed files:"; echo "$changed" | sed 's/^/  /'
-
-          ruleset=$(echo "$changed" | grep -E '^(eslint\.config\.js|eslint-suppressions\.json|mise\.toml|vite\.config\.ts|\.habit-hooks/|\.github/workflows/)' || true)
-          source=$(echo "$changed" | grep -E '^src/' | grep -vE '\.test\.(ts|tsx)$' || true)
-
-          if [ -n "$ruleset" ] && [ -n "$source" ]; then
-            if echo "$LABELS" | tr ',' '\n' | grep -qx 'ruleset-change'; then
-              echo "::notice::Ruleset and source both changed, but the 'ruleset-change' label is present. Allowing."
-              exit 0
-            fi
-            echo "::error::This PR changes the ruleset AND production source in one go."
-            echo "Ruleset files touched:"; echo "$ruleset" | sed 's/^/  /'
-            echo "Source files touched:";  echo "$source"  | sed 's/^/  /'
-            echo ""
-            echo "Split them into separate PRs, or add the 'ruleset-change' label to say this is deliberate."
-            exit 1
-          fi
-          echo "OK — no bundled ruleset change."
