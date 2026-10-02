@@ -1,5 +1,7 @@
 import React from 'react';
 import RatingsPanel from '../RatingsPanel';
+import WishlistButton from '../WishlistButton';
+import WatchedButton from '../WatchedButton';
 import DetailCard from './DetailCard';
 import { MediaDetails, MovieDetails } from '../../types';
 import { CrewMember, getCreators, getDirector } from './credits';
@@ -41,7 +43,13 @@ const MediaOverview: React.FC<{ media: MediaDetails }> = ({ media }) => {
         </div>
 
         <div className="flex-1 flex flex-col gap-4">
-          <RatingsPanel media={media} releaseYear={releaseYear} />
+          <div className="flex items-start justify-between gap-4">
+            <RatingsPanel media={media} releaseYear={releaseYear} />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <WishlistButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
+              <WatchedButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
+            </div>
+          </div>
 
           <div>
             <h2 className="text-white font-semibold mb-2">Overview</h2>
