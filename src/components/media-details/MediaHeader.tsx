@@ -73,8 +73,8 @@ const MediaHeader: React.FC<{ media: MediaDetails }> = ({ media }) => {
         <ArrowLeft className="w-5 h-5" />
       </button>
 
-      {/* Hero area — push content below backdrop */}
-      <div className="relative z-10 mt-[calc(25vh+64px)] sm:mt-[calc(30vh+64px)] md:mt-[calc(35vh+72px)] w-full max-w-4xl mx-auto px-4 sm:px-6">
+      {/* Hero area: clear the back button, keep some backdrop visible */}
+      <div className="relative z-10 mt-16 sm:mt-20 md:mt-[14vh] w-full max-w-4xl mx-auto px-4 sm:px-6">
         {/* Title row */}
         <div className="flex items-start gap-3 mb-3">
           <h1 className="text-white text-3xl sm:text-4xl font-bold flex-1 drop-shadow">
