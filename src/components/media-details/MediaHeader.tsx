@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { ArrowLeft } from 'lucide-react';
 import MediaRating from '../MediaRating';
-import WishlistButton from '../WishlistButton';
-import WatchedButton from '../WatchedButton';
 import { MediaDetails, MovieDetails, Genre } from '../../types';
 import { getGenreMapping } from '../../utils/genreMap';
 import { formatMediaDateRange, formatMediaRuntime } from '../../utils/mediaDate';
@@ -75,16 +73,9 @@ const MediaHeader: React.FC<{ media: MediaDetails }> = ({ media }) => {
 
       {/* Hero area: clear the back button, keep some backdrop visible */}
       <div className="relative z-10 mt-16 sm:mt-20 md:mt-[14vh] w-full max-w-4xl mx-auto px-4 sm:px-6">
-        {/* Title row */}
-        <div className="flex items-start gap-3 mb-3">
-          <h1 className="text-white text-3xl sm:text-4xl font-bold flex-1 drop-shadow">
-            {media.title}
-          </h1>
-          <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-            <WishlistButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
-            <WatchedButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
-          </div>
-        </div>
+        <h1 className="text-white text-3xl sm:text-4xl font-bold mb-3 drop-shadow">
+          {media.title}
+        </h1>
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
