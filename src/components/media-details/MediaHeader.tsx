@@ -25,7 +25,8 @@ const FocusableGenreChip: React.FC<{ genre: Genre; onClick: () => void }> = ({ g
   );
 };
 
-const READABLE_ON_ANY_BACKDROP = 'border border-white/25 backdrop-blur-md shadow-lg shadow-black/40';
+const READABLE_ON_ANY_BACKDROP =
+  'border border-white/25 backdrop-blur-md shadow-lg shadow-black/40 min-w-11 min-h-11 sm:min-w-0 sm:min-h-0';
 
 /**
  * Backdrop, back button and the title block. The backdrop is fixed-positioned,
@@ -77,14 +78,13 @@ const MediaHeader: React.FC<{ media: MediaDetails }> = ({ media }) => {
 
       {/* Hero area: clear the back button, keep some backdrop visible */}
       <div className="relative z-10 mt-16 sm:mt-20 md:mt-[14vh] w-full max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center gap-3 mb-3">
-          <h1 className="text-white text-3xl sm:text-4xl font-bold min-w-0 drop-shadow">
-            {media.title}
-          </h1>
-          <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Phones: actions get their own row. Wider: inline flow, so they trail the title's last line however it wraps. */}
+        <div className="text-white text-2xl sm:text-4xl font-bold leading-tight mb-3">
+          <h1 className="inline drop-shadow">{media.title}</h1>
+          <span className="flex gap-2 mt-3 sm:inline-flex sm:align-middle sm:mt-0 sm:ml-3">
             <WishlistButton mediaId={media.id} mediaType={media.media_type} iconSize={22} className={READABLE_ON_ANY_BACKDROP} focusable />
             <WatchedButton mediaId={media.id} mediaType={media.media_type} iconSize={22} className={READABLE_ON_ANY_BACKDROP} focusable />
-          </div>
+          </span>
         </div>
 
         {/* Meta row */}
