@@ -1,7 +1,5 @@
 import React from 'react';
 import RatingsPanel from '../RatingsPanel';
-import WishlistButton from '../WishlistButton';
-import WatchedButton from '../WatchedButton';
 import DetailCard from './DetailCard';
 import { MediaDetails, MovieDetails } from '../../types';
 import { CrewMember, getCreators, getDirector } from './credits';
@@ -28,9 +26,9 @@ const MediaOverview: React.FC<{ media: MediaDetails }> = ({ media }) => {
 
   return (
     <DetailCard>
-      <div className="flex flex-col sm:flex-row gap-5">
-        {/* Poster */}
-        <div className="w-full sm:w-36 flex-shrink-0">
+      {/* Phones: thumbnail beside the ratings, text full-width below. Wider: poster down the left. */}
+      <div className="grid grid-cols-[6rem_1fr] sm:grid-cols-[9rem_1fr] sm:grid-rows-[auto_1fr] gap-x-4 sm:gap-x-5 gap-y-4">
+        <div className="sm:row-span-2">
           {media.poster_path ? (
             <img
               src={`https://image.tmdb.org/t/p/w500${media.poster_path}`}
@@ -42,14 +40,11 @@ const MediaOverview: React.FC<{ media: MediaDetails }> = ({ media }) => {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <RatingsPanel media={media} releaseYear={releaseYear} />
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <WishlistButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
-              <WatchedButton mediaId={media.id} mediaType={media.media_type} iconSize={24} focusable />
-            </div>
-          </div>
+        <div className="min-w-0">
+          <RatingsPanel media={media} releaseYear={releaseYear} />
+        </div>
+
+        <div className="col-span-2 sm:col-span-1 flex flex-col gap-4">
 
           <div>
             <h2 className="text-white font-semibold mb-2">Overview</h2>
