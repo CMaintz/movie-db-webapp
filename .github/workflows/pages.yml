@@ -1,5 +1,6 @@
-# Web build on GitHub Pages under /movie-db-webapp/. The webOS build (`npm run build:tv`)
-# keeps the default base and is not affected by the --base flag used here.
+# Web build on GitHub Pages at the custom domain moviedb.maintz.dev (set in the repo's
+# Pages settings), served from the root. GitHub 301-redirects the old
+# cmaintz.github.io/movie-db-webapp/ address there.
 name: pages
 
 on:
@@ -25,7 +26,7 @@ jobs:
           version: 2026.9.2
       - run: npm ci
       - name: Build
-        run: npm run build -- --base=/movie-db-webapp/
+        run: npm run build
         env:
           VITE_TMDB_API_KEY: ${{ secrets.VITE_TMDB_API_KEY }}
           VITE_TMDB_READ_TOKEN: ${{ secrets.VITE_TMDB_READ_TOKEN }}
