@@ -2,7 +2,7 @@
 
 A movie and TV browser that runs in the browser and as a sideloaded app on my LG webOS TV, where you drive it with the remote's D-pad. It pulls everything from TMDB, adds IMDb and Rotten Tomatoes scores via OMDb, shows which streaming services carry a title in your country, and on the TV it can launch straight into the right streaming app.
 
-Live (web build): https://moviedb.maintz.dev
+Live (web build): https://movie-explorer.maintz.dev
 
 The live build doesn't have OMDb or streaming-availability keys, so IMDb/RT scores and per-title deep links only show up locally with those keys set.
 
