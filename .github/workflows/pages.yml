@@ -1,6 +1,6 @@
-# Web build on GitHub Pages at the custom domain moviedb.maintz.dev (set in the repo's
-# Pages settings), served from the root. GitHub 301-redirects the old
-# cmaintz.github.io/movie-db-webapp/ address there.
+# Web build on GitHub Pages at the custom domain movie-explorer.maintz.dev (set in the
+# repo's Pages settings), served from the root. The old moviedb.maintz.dev is a
+# Cloudflare redirect rule to the new domain.
 name: pages
 
 on:
