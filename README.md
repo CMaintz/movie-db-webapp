@@ -1,4 +1,4 @@
-# movie-db-webapp
+# movie-explorer
 
 A movie and TV browser that runs in the browser and as a sideloaded app on my LG webOS TV, where you drive it with the remote's D-pad. It pulls everything from TMDB, adds IMDb and Rotten Tomatoes scores via OMDb, shows which streaming services carry a title in your country, and on the TV it can launch straight into the right streaming app.
 
