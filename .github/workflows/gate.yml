@@ -16,13 +16,13 @@ permissions:
 jobs:
   # lint / typecheck / test / audit (`mise run gate`, one verb per step) + structural smells
   gate:
-    uses: CMaintz/foundry/.github/workflows/gate.yml@v2
+    uses: CMaintz/foundry/.github/workflows/gate.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2
     with:
       stack: ts
 
   # secret scan + tightening-aware ruleset guard + semgrep
   security:
-    uses: CMaintz/foundry/.github/workflows/security.yml@v2
+    uses: CMaintz/foundry/.github/workflows/security.yml@f77fc773b2efe2a1fd5c4a323752efd059d337c4 # v2
     permissions:
       contents: read
       pull-requests: read
